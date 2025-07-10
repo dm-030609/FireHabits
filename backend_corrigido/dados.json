@@ -1,0 +1,40 @@
+{
+  "habitos": [
+    {
+      "nome": "Beber água",
+      "descricao": "Beber ao menos 2 litros de água por dia.",
+      "frequencia": "Diário",
+      "status": "Ativo"
+    },
+    {
+      "nome": "Exercícios físicos",
+      "descricao": "Praticar atividades físicas por pelo menos 30 minutos.",
+      "frequencia": "Diário",
+      "status": "Ativo"
+    },
+    {
+      "nome": "Ler livros",
+      "descricao": "Ler ao menos 20 páginas de um livro por dia.",
+      "frequencia": "Diário",
+      "status": "Pendente"
+    },
+    {
+      "nome": "Meditação",
+      "descricao": "Meditar por 10 minutos todos os dias.",
+      "frequencia": "Diário",
+      "status": "Ativo"
+    },
+    {
+      "nome": "Organizar a casa",
+      "descricao": "Arrumar a casa, limpando e organizando os ambientes.",
+      "frequencia": "Semanal",
+      "status": "Inativo"
+    },
+    {
+      "nome": "Dormir mais cedo",
+      "descricao": "Ir para a cama até as 22h.",
+      "frequencia": "Diário",
+      "status": "Pendente"
+    }
+  ]
+}
