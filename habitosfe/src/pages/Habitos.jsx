@@ -74,17 +74,22 @@ function Habitos() {
 
       <Container fluid="md" className="py-4">
 
-        <div className="text-center mb-4">
-          <Link to="/criar" className="btn" style={{
-            backgroundColor: '#e60000',
-            color: '#fff',
-            fontWeight: 'bold',
-            borderRadius: '8px',
-            padding: '0.5rem 1.5rem'
-          }}>
-            🔥 Novo Hábito
+        {/*<div className="text-center mb-4">
+          <Link
+            to="/criar"
+            className="btn btn-danger fw-bold px-3 py-1 rounded d-flex align-items-center gap-1 shadow-sm"
+            style={{
+              fontSize: '0.95rem',
+              boxShadow: '0 0 10px rgba(255, 0, 0, 0.5)',
+              transition: 'transform 0.2s ease-in-out',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
+            onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+          >
+            <span style={{ fontSize: '1.2rem' }}>🔥</span>
+            <span>Novo Hábito</span>
           </Link>
-        </div>
+        </div>*/}
 
         <h2 className="text-danger mb-3 text-center fs-2">Meus Hábitos</h2>
 
@@ -181,6 +186,30 @@ function Habitos() {
             </Col>
           ))}
         </Row>
+        <Link
+          to="/criar"
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            width: '60px',
+            height: '60px',
+            backgroundColor: '#1a1a1a',
+            border: '2px solid #dc3545',
+            borderRadius: '12px',
+            boxShadow: '0 0 15px rgba(255, 0, 0, 0.6)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.5rem',
+            transition: 'transform 0.2s ease-in-out',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.1)')}
+          onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+        >
+          🔥
+        </Link>
       </Container>
     </>
   );

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Container, Form, Button, Alert } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { Container, Form, Button, Alert, Row, Col } from 'react-bootstrap';
+import { useNavigate, Link } from 'react-router-dom';
 import { salvarHabitoLocal } from '../../indexedDB';
 
 function CriarHabito() {
@@ -24,17 +24,49 @@ function CriarHabito() {
       await axios.post('http://localhost:3000/habitos', form);
       navigate('/habitos');
     } catch (err) {
-        const offlineHabito = { ...form, _id: Date.now().toString() }; // gera _id fake
-        await salvarHabitoLocal(offlineHabito);
-        navigate('/habitos');
-        setErro('Erro ao criar hábito.');
+      const offlineHabito = { ...form, _id: Date.now().toString() };
+      await salvarHabitoLocal(offlineHabito);
+      navigate('/habitos');
+      setErro('Erro ao criar hábito.');
     }
   };
 
   return (
-    <div className="bg-dark text-light min-vh-100 d-flex align-items-center justify-content-center p-3">
-      <Container fluid="md">
-        <h2 className="text-danger mb-4 text-center">Novo Hábito</h2>
+    <div className="bg-dark text-light min-vh-100 py-5">
+      <Container style={{ maxWidth: '600px' }}>
+       <div className="mb-4">
+          {/* Botão voltar */}
+          <div className="mb-3 d-flex d-md-block justify-content-center">
+            <Link
+              to="/habitos"
+              className="d-flex align-items-center gap-2"
+              style={{
+                backgroundColor: '#111',
+                border: '2px solid #dc3545',
+                padding: '0.25rem 0.7rem',
+                borderRadius: '6px',
+                color: '#dc3545',
+                fontWeight: 'bold',
+                textDecoration: 'none',
+                fontSize: '0.85rem',
+                lineHeight: '1',
+                boxShadow: '0 0 8px rgba(255, 0, 0, 0.4)',
+                transition: 'transform 0.2s ease-in-out',
+                maxWidth: 'fit-content',
+              }}
+
+              onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
+              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+            >
+              <span style={{ fontSize: '1.2rem' }}>🔥</span>
+              <span>Voltar</span>
+            </Link>
+          </div>
+
+          {/* Título centralizado REAL */}
+          <h2 className="text-danger text-center m-0">Novo Hábito</h2>
+        </div>
+
 
         {erro && <Alert variant="danger">{erro}</Alert>}
 
@@ -85,7 +117,22 @@ function CriarHabito() {
             </Form.Select>
           </Form.Group>
 
-          <Button type="submit" variant="danger" className="w-100">
+          <Button
+            type="submit"
+            className="w-100 fw-bold"
+            style={{
+              backgroundColor: '#111',
+              border: '2px solid #dc3545',
+              color: '#dc3545',
+              borderRadius: '8px',
+              boxShadow: '0 0 10px rgba(255, 0, 0, 0.5)',
+              fontSize: '1.1rem',
+              padding: '0.75rem',
+              transition: 'all 0.2s ease-in-out',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
+            onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+          >
             Criar Hábito
           </Button>
         </Form>

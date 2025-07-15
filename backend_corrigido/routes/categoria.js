@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Categoria = require('../models/Categoria');
+const Categoria = require('../models/categoria');
 
 //  criar Usuário
 router.post('/', async (req, res) => {

@@ -29,7 +29,21 @@ export default defineConfig({
       },
       devOptions: {
         enabled: true
+      },
+      workbox: {
+        navigateFallback: '/',
+        navigateFallbackAllowlist: [/^\/$/, /^\/habitos$/, /^\/dashboard$/, /^\/criar$/, /^\/editar\/.+$/]
       }
     })
-  ]
+  ],
+
+  // ✅ Adicionado abaixo:
+  server: {
+    proxy: {
+      "/progresso": "http://localhost:3000",
+      "/habitos": "http://localhost:3000",
+      "/registro": "http://localhost:3000",
+      "/usuario": "http://localhost:3000",
+    },
+  }
 });

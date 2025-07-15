@@ -8,10 +8,12 @@ const Usuario = require('./models/usuario.js');
 const Habito = require('./models/habito.js');
 const Registro = require('./models/registro.js');
 const Categoria = require('./models/categoria.js');
+const progressoRouter = require('./routes/progresso.js');
 
 // Habilita o CORS para todas as origens (pode ser customizado para origens específicas)
 app.use(cors());
 app.use(express.json()); // Para que o Express consiga entender JSON no corpo da requisição
+app.use('/progresso', progressoRouter);
 
 // Configuração do MongoDB
 const MONGO_URI = 'mongodb+srv://danielm26:newsenhamongodb@habitsappcluster.lhwikak.mongodb.net/?retryWrites=true&w=majority&appName=HabitsAppCluster'; // Substitua pela URI do MongoDB Atlas se necessário

@@ -1,113 +1,125 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import {
-  Container, Row, Col, Card, Spinner, Badge
-} from 'react-bootstrap';
-import { Link } from 'react-router-dom';
-import { listarHabitosLocal } from '../../indexedDB';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
 
-export default function Dashboard() {
-  const [dados, setDados] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [offline, setOffline] = useState(false);
+function Dashboard() {
   const [progresso, setProgresso] = useState([]);
+  const [concluidosHoje, setConcluidosHoje] = useState(0);
+  const [habitosAtivos, setHabitosAtivos] = useState(0);
+  const [habitosPendentes, setHabitosPendentes] = useState(0);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   useEffect(() => {
-    const fetchDados = async () => {
+    const fetchProgresso = async () => {
       try {
-        const res = await axios.get('http://localhost:3000/habitos/resumo');
-        setDados(res.data);
-        setOffline(false);
-      } catch {
-        const locais = await listarHabitosLocal();
-        const ativos = locais.length;
-        const concluidosHoje = locais.filter(h => h.status === 'Concluído').length;
-        const pendentes = locais.filter(h => h.status === 'Pendente').length;
-        const fakeResumo = {
-          ativos,
-          concluidosHoje,
-          pendentes
-        };
-        setDados(fakeResumo);
-        setOffline(true);
-      } finally {
-        setLoading(false);
+        const response = await axios.get("/progresso/semana");
+        const dados = response.data;
+
+        if (!Array.isArray(dados)) {
+          console.error("❌ Progresso recebido não é um array:", dados);
+          setProgresso([]);
+          return;
+        }
+
+        setProgresso(dados);
+        setHabitosAtivos(dados.length);
+
+        const hoje = new Date().getDay();
+        let concluidos = 0;
+        let pendentes = 0;
+
+        dados.forEach((habito) => {
+          if (habito.progresso?.[hoje]) concluidos++;
+          else pendentes++;
+        });
+
+        setConcluidosHoje(concluidos);
+        setHabitosPendentes(pendentes);
+      } catch (error) {
+        console.error("❌ Erro ao buscar progresso:", error);
+        setProgresso([]);
       }
     };
 
-    fetchDados();
+    fetchProgresso();
+    window.addEventListener("online", () => setIsOffline(false));
+    window.addEventListener("offline", () => setIsOffline(true));
+
+    return () => {
+      window.removeEventListener("online", () => setIsOffline(false));
+      window.removeEventListener("offline", () => setIsOffline(true));
+    };
   }, []);
 
   return (
-    <div style={{ backgroundColor: '#111', minHeight: '100vh', color: '#fff', paddingBottom: '5rem' }}>
-      <Container className="py-4">
-        <h2 className="text-danger text-center mb-4">
-          Painel de Controle{' '}
-          {offline && (
-            <Badge bg="secondary" className="ms-2">
-              (Offline)
-            </Badge>
-          )}
-        </h2>
+    <div className="container px-3 py-4">
+      <h2 className="text-center text-danger fw-bold mb-4">
+        Painel de Controle{" "}
+        <span className="badge bg-secondary ms-2">
+          {isOffline ? "Offline" : "Online"}
+        </span>
+      </h2>
 
-        {loading ? (
-          <div className="text-center">
-            <Spinner animation="border" variant="danger" />
+      <div className="row row-cols-1 row-cols-md-3 g-3 text-center mb-4">
+        <div className="col">
+          <div className="p-3 bg-black text-white rounded">
+            <h5>Hábitos Ativos</h5>
+            <h3 className="text-danger">{habitosAtivos}</h3>
           </div>
-        ) : (
-          <Row className="g-4 justify-content-center text-center">
-            <Col xs={12} md={4}>
-              <Card className="bg-black text-white rounded-4 shadow-sm">
-                <Card.Body>
-                  <Card.Title>Hábitos Ativos</Card.Title>
-                  <h3 className="text-danger">{dados.ativos}</h3>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col xs={12} md={4}>
-              <Card className="bg-secondary text-white rounded-4 shadow-sm">
-                <Card.Body>
-                  <Card.Title>Concluídos Hoje</Card.Title>
-                  <h3>{dados.concluidosHoje}</h3>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col xs={12} md={4}>
-              <Card className="bg-danger text-white rounded-4 shadow-sm">
-                <Card.Body>
-                  <Card.Title>Pendentes</Card.Title>
-                  <h3>{dados.pendentes}</h3>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        )}
-
-        <h4 className="text-center mt-5 mb-3">Progresso Semanal</h4>
-        <div style={{ backgroundColor: '#000', height: '30px', borderRadius: '8px', marginBottom: '2rem' }}>
-          {/* Aqui entra o gráfico real futuramente */}
         </div>
-      </Container>
+        <div className="col">
+          <div className="p-3 bg-secondary text-white rounded">
+            <h5>Concluídos Hoje</h5>
+            <h3>{concluidosHoje}</h3>
+          </div>
+        </div>
+        <div className="col">
+          <div className="p-3 bg-danger text-white rounded">
+            <h5>Pendentes</h5>
+            <h3>{habitosPendentes}</h3>
+          </div>
+        </div>
+      </div>
 
-      {/* Botão flutuante com ícone 🔥 */}
-      <Link to="/habitos" style={{
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        backgroundColor: '#e60000',
-        borderRadius: '50%',
-        width: '56px',
-        height: '56px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '1.5rem',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
-        zIndex: 999
-      }}>
-        🔥
+      <h4 className="text-center text-white mb-3">Progresso Semanal</h4>
+
+      {Array.isArray(progresso) &&
+        progresso.map((habito) => (
+          <div
+            key={habito.habitoId}
+            className="bg-black rounded text-white px-3 py-2 mb-3 mx-auto"
+            style={{ maxWidth: "600px" }}
+          >
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h5 className="text-danger fw-semibold mb-0">{habito.nome}</h5>
+            </div>
+
+            <div className="row gx-2 justify-content-center">
+              {habito.progresso?.map((feito, idx) => (
+                <div key={idx} className="col-auto">
+                  <div
+                    className="rounded"
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      backgroundColor: feito ? "#dc3545" : "#6c757d",
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+      <Link
+        to="/habitos"
+        className="btn btn-outline-danger position-fixed botao-voltar"
+        style={{ bottom: "20px", right: "20px", zIndex: 999 }}
+      >
+        🔥 Voltar
       </Link>
     </div>
   );
 }
+
+export default Dashboard;
