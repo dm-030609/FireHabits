@@ -1,142 +1,146 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { Container, Form, Button, Alert, Row, Col } from 'react-bootstrap';
-import { useNavigate, Link } from 'react-router-dom';
-import { salvarHabitoLocal } from '../../indexedDB';
+// src/pages/CriarHabito.jsx
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { salvarLembrete } from "../utils/lembrete-db.js";
+
+const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 function CriarHabito() {
-  const [form, setForm] = useState({
-    nome: '',
-    descricao: '',
-    frequencia: '',
-    status: 'Ativo',
-  });
-  const [erro, setErro] = useState(null);
   const navigate = useNavigate();
+  const [habito, setHabito] = useState({
+    nome: "",
+    descricao: "",
+    frequencia: "",
+    status: "Ativo",
+  });
 
-  const handleChange = e => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const [horario, setHorario] = useState("");
+  const [mensagem, setMensagem] = useState("");
+  const [dias, setDias] = useState([]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setHabito((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async e => {
+  const toggleDia = (i) => {
+    setDias(dias.includes(i) ? dias.filter((d) => d !== i) : [...dias, i]);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      await axios.post('http://localhost:3000/habitos', form);
-      navigate('/habitos');
-    } catch (err) {
-      const offlineHabito = { ...form, _id: Date.now().toString() };
-      await salvarHabitoLocal(offlineHabito);
-      navigate('/habitos');
-      setErro('Erro ao criar hábito.');
+    const res = await axios.post("/habitos", habito);
+    const novoHabito = res.data;
+
+    if (horario && mensagem && dias.length > 0) {
+      await salvarLembrete(novoHabito._id, { horario, mensagem, dias });
     }
+
+    navigate("/habitos");
   };
 
   return (
-    <div className="bg-dark text-light min-vh-100 py-5">
-      <Container style={{ maxWidth: '600px' }}>
-       <div className="mb-4">
-          {/* Botão voltar */}
-          <div className="mb-3 d-flex d-md-block justify-content-center">
-            <Link
-              to="/habitos"
-              className="d-flex align-items-center gap-2"
-              style={{
-                backgroundColor: '#111',
-                border: '2px solid #dc3545',
-                padding: '0.25rem 0.7rem',
-                borderRadius: '6px',
-                color: '#dc3545',
-                fontWeight: 'bold',
-                textDecoration: 'none',
-                fontSize: '0.85rem',
-                lineHeight: '1',
-                boxShadow: '0 0 8px rgba(255, 0, 0, 0.4)',
-                transition: 'transform 0.2s ease-in-out',
-                maxWidth: 'fit-content',
-              }}
+    <div className="container py-5">
+      <button
+        onClick={() => navigate("/habitos")}
+        className="btn btn-outline-danger mb-3"
+      >
+        🔥 Voltar
+      </button>
 
-              onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
-              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-            >
-              <span style={{ fontSize: '1.2rem' }}>🔥</span>
-              <span>Voltar</span>
-            </Link>
-          </div>
+      <h2 className="text-center text-danger mb-4">Novo Hábito</h2>
 
-          {/* Título centralizado REAL */}
-          <h2 className="text-danger text-center m-0">Novo Hábito</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="mb-3">
+          <label className="form-label">Nome</label>
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Ex: Acordar cedo"
+            name="nome"
+            value={habito.nome}
+            onChange={handleChange}
+            required
+          />
         </div>
 
+        <div className="mb-3">
+          <label className="form-label">Descrição</label>
+          <textarea
+            className="form-control"
+            placeholder="Detalhes do hábito..."
+            name="descricao"
+            value={habito.descricao}
+            onChange={handleChange}
+          ></textarea>
+        </div>
 
-        {erro && <Alert variant="danger">{erro}</Alert>}
+        <div className="mb-3">
+          <label className="form-label">Frequência</label>
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Diário, Semanal, etc."
+            name="frequencia"
+            value={habito.frequencia}
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
-            <Form.Label>Nome</Form.Label>
-            <Form.Control
-              type="text"
-              name="nome"
-              value={form.nome}
-              onChange={handleChange}
-              placeholder="Ex: Acordar cedo"
-              required
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Descrição</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={2}
-              name="descricao"
-              value={form.descricao}
-              onChange={handleChange}
-              placeholder="Detalhes do hábito..."
-              required
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Frequência</Form.Label>
-            <Form.Control
-              type="text"
-              name="frequencia"
-              value={form.frequencia}
-              onChange={handleChange}
-              placeholder="Diário, Semanal, etc."
-              required
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-4">
-            <Form.Label>Status</Form.Label>
-            <Form.Select name="status" value={form.status} onChange={handleChange}>
-              <option>Ativo</option>
-              <option>Pendente</option>
-              <option>Concluído</option>
-            </Form.Select>
-          </Form.Group>
-
-          <Button
-            type="submit"
-            className="w-100 fw-bold"
-            style={{
-              backgroundColor: '#111',
-              border: '2px solid #dc3545',
-              color: '#dc3545',
-              borderRadius: '8px',
-              boxShadow: '0 0 10px rgba(255, 0, 0, 0.5)',
-              fontSize: '1.1rem',
-              padding: '0.75rem',
-              transition: 'all 0.2s ease-in-out',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
-            onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+        <div className="mb-4">
+          <label className="form-label">Status</label>
+          <select
+            name="status"
+            className="form-select"
+            value={habito.status}
+            onChange={handleChange}
+            required
           >
-            Criar Hábito
-          </Button>
-        </Form>
-      </Container>
+            <option>Ativo</option>
+            <option>Concluído</option>
+            <option>Inativo</option>
+          </select>
+        </div>
+
+        <h5 className="text-danger">🔔 Lembrete (opcional)</h5>
+        <div className="row g-2 align-items-center mb-2">
+          <div className="col-4">
+            <input
+              type="time"
+              className="form-control"
+              value={horario}
+              onChange={(e) => setHorario(e.target.value)}
+            />
+          </div>
+          <div className="col">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Mensagem"
+              value={mensagem}
+              onChange={(e) => setMensagem(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="mb-4">
+          {diasSemana.map((dia, idx) => (
+            <label key={idx} className="form-check form-check-inline">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                checked={dias.includes(idx)}
+                onChange={() => toggleDia(idx)}
+              />
+              <span className="form-check-label">{dia}</span>
+            </label>
+          ))}
+        </div>
+
+        <button className="btn btn-danger w-100">Criar Hábito</button>
+      </form>
     </div>
   );
 }

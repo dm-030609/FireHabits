@@ -32,7 +32,7 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: '/',
-        navigateFallbackAllowlist: [/^\/$/, /^\/habitos$/, /^\/dashboard$/, /^\/criar$/, /^\/editar\/.+$/]
+        navigateFallbackAllowlist: [/^\/$/, /^\/habitos$/, /^\/dashboard$/, /^\/criar$/, /^\/editarHabito\/.+$/]
       }
     })
   ],

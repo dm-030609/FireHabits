@@ -4,12 +4,15 @@ import Home from './pages/Home.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import CriarHabitos from './pages/CriarHabitos.jsx';
 import EditarHabito from './pages/EditarHabito.jsx';
-
-//import Dashboard from './pages/Dashboard';
-//import Perfil from './pages/Perfil';
-//import NotFound from './pages/NotFound';
+import { useEffect } from "react";
+import { iniciarVerificadorLembretes } from "./utils/lembrete-db";
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 function App() {
+  useEffect(() => {
+    iniciarVerificadorLembretes();
+  }, []);
+
   return (
     <Routes>
       <Route path="/" element={<Home />} />
@@ -18,9 +21,7 @@ function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/criar" element={<CriarHabitos />} />
       <Route path="/editar/:id" element={<EditarHabito />} />
-      {/*<Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/perfil" element={<Perfil />} />
-      <Route path="*" element={<NotFound />} />*/}
+      <Route path="/editarHabito/:id" element={<EditarHabito />} />
     </Routes>
   );
 }
