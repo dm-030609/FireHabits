@@ -7,10 +7,16 @@ import EditarHabito from './pages/EditarHabito.jsx';
 import { useEffect } from "react";
 import { iniciarVerificadorLembretes } from "./utils/lembrete-db";
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import { iniciarMonitorSincronizacao } from './utils/syncDB.js';
+
 
 function App() {
   useEffect(() => {
     iniciarVerificadorLembretes();
+  }, []);
+
+  useEffect(() => {
+  iniciarMonitorSincronizacao();
   }, []);
 
   return (

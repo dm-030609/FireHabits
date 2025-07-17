@@ -30,19 +30,32 @@ router.get('/:id', async (req, res) => {
 
 
 //  criar hábito
-router.post('/', async (req, res) => {
-    try{
-        const novoHabito = new Habito(req.body);
-        await novoHabito.save();
-        res.status(201).json(novoHabito);
-    } catch (err) {
-        res.status(400).json({ erro: "Erro ao criar hábito", detalhes: err});
-    }
+router.post("/", async (req, res) => {
+  try {
+    const dados = req.body;
+
+    // garante que o _id seja usado
+    const novoHabito = new Habito({
+      _id: dados._id, 
+      nome: dados.nome,
+      descricao: dados.descricao,
+      frequencia: dados.frequencia,
+      status: dados.status,
+      criadoEm: dados.criadoEm
+    });
+
+    await novoHabito.save();
+    res.status(201).json(novoHabito);
+  } catch (err) {
+    console.error("❌ Erro ao criar hábito:", err.message);
+    res.status(500).json({ erro: "Erro ao criar hábito" });
+  }
 });
 
 
 //  atualizar hábito
 router.put("/:id", async (req, res) => {
+  console.log('🚀 Dados recebidos no PUT:', req.body);
     try {
         const atualizado = await Habito.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if(!atualizado) return res.status(404).json({ erro: "Hábito não encontrado", detalhes: err});
@@ -59,7 +72,7 @@ router.put("/:id", async (req, res) => {
 
         res.json(atualizado);
     } catch (err) {
-        ress.status(400).json({ erro: "Erro ao atualizar hábito", detalhes: err});
+        res.status(400).json({ erro: "Erro ao atualizar hábito", detalhes: err});
     }
 });
 

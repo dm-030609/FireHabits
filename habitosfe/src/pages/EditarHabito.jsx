@@ -190,6 +190,7 @@ import {
   listarLembretesPorHabito,
   deletarLembrete,
 } from "../utils/lembrete-db.js";
+import { salvarHabitoLocal } from "../utils/indexedDB.js";
 
 const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -215,9 +216,25 @@ function EditarHabito() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await axios.put(`/habitos/${id}`, habito);
-    navigate("/habitos");
+
+    try {
+      if (navigator.onLine) {
+        await axios.put(`/habitos/${id}`, habito);
+      } else {
+        console.warn("📴 Editando hábito offline");
+        console.log("🧩 ID do hábito:", id);
+        console.log("📦 Salvando:", { ...habito, _id: id });
+        await salvarHabitoLocal({ ...habito, _id: id });
+        alert("📦 Hábito atualizado localmente. Será sincronizado depois.");
+      }
+
+      navigate("/habitos");
+    } catch (err) {
+      console.error("❌ Erro ao editar hábito:", err);
+      alert("Erro ao salvar hábito.");
+    }
   };
+
 
   const toggleDia = (i) => {
     setDias(dias.includes(i) ? dias.filter((d) => d !== i) : [...dias, i]);

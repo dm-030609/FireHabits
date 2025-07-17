@@ -1,25 +1,10 @@
 // src/utils/lembrete-db.js
-import { openDB } from 'idb';
+import { initDB } from './indexedDB';
 
-const DB_NAME = 'firehabits';
 const STORE_NAME = 'lembretes';
 
-async function getDB() {
-  return openDB(DB_NAME, 1, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, {
-          keyPath: 'id',
-          autoIncrement: true,
-        });
-        store.createIndex('habitoId', 'habitoId');
-      }
-    },
-  });
-}
-
 export async function salvarLembrete(habitoId, lembrete) {
-  const db = await getDB();
+  const db = await initDB();
   await db.add(STORE_NAME, {
     habitoId,
     ...lembrete,
@@ -27,24 +12,24 @@ export async function salvarLembrete(habitoId, lembrete) {
 }
 
 export async function listarLembretesPorHabito(habitoId) {
-  const db = await getDB();
+  const db = await initDB();
   const tx = db.transaction(STORE_NAME);
   const index = tx.store.index('habitoId');
   return index.getAll(habitoId);
 }
 
 export async function listarTodosLembretes() {
-  const db = await getDB();
+  const db = await initDB();
   return db.getAll(STORE_NAME);
 }
 
 export async function deletarLembrete(id) {
-  const db = await getDB();
+  const db = await initDB();
   await db.delete(STORE_NAME, id);
 }
 
 export async function atualizarLembrete(lembrete) {
-  const db = await getDB();
+  const db = await initDB();
   await db.put(STORE_NAME, lembrete);
 }
 

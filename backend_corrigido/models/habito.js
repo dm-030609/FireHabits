@@ -4,7 +4,7 @@ const habitoSchema = new mongoose.Schema({
   nome: String,
   descricao: String,
   frequencia: String, // Diário, Semanal, etc.
-  status: { type: String, enum: ['Ativo', 'Inativo', 'Pendente'] },
+  status: { type: String, enum: ['Ativo', 'Inativo', 'Pendente', 'Concluído'] },
   categoria: { type: mongoose.Schema.Types.ObjectId, ref: 'Categoria' },
   usuarioId: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario' },
   criadoEm: { type: Date, default: Date.now }
