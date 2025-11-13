@@ -58,4 +58,44 @@ export async function limparHabitosLocal() {
   await db.clear(HABITO_STORE);
 }
 
+// ------------------------
+// STORE para progresso semanal
+// ------------------------
+const STORE_PROGRESO = "progressoSemana";
+
+export async function salvarProgressoSemana(dados) {
+  try {
+    const db = await openDB("FireHabitsDB", 1, {
+      upgrade(db) {
+        if (!db.objectStoreNames.contains(STORE_PROGRESO)) {
+          db.createObjectStore(STORE_PROGRESO);
+        }
+      },
+    });
+    await db.put(STORE_PROGRESO, dados, "semanaAtual");
+    console.log("💾 Progresso semanal salvo no IndexedDB.");
+  } catch (err) {
+    console.error("❌ Erro ao salvar progresso semanal:", err);
+  }
+}
+
+export async function carregarProgressoSemana() {
+  try {
+    const db = await openDB("FireHabitsDB", 1, {
+      upgrade(db) {
+        if (!db.objectStoreNames.contains(STORE_PROGRESO)) {
+          db.createObjectStore(STORE_PROGRESO);
+        }
+      },
+    });
+    const dados = await db.get(STORE_PROGRESO, "semanaAtual");
+    console.log("📦 Progresso semanal carregado do IndexedDB:", dados);
+    return dados || null;
+  } catch (err) {
+    console.error("❌ Erro ao carregar progresso semanal:", err);
+    return null;
+  }
+}
+
+
 

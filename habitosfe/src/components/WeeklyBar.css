@@ -1,0 +1,97 @@
+.weeklybar-container {
+  background: #000;
+  padding: 16px;
+  border-radius: 10px;
+  color: #fff;
+  margin-bottom: 20px;
+  max-width: 620px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.weeklybar-title {
+  color: #d32f2f;
+  font-weight: 600;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+/* GRID: 7 colunas + área do badge */
+.weeklybar-fullgrid {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Coluna com LETRA + QUADRADO empilhados */
+.weeklybar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.weeklybar-day-label {
+  font-size: 14px;
+  color: #ccc;
+  margin-bottom: 4px;
+}
+
+.weeklybar-block {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  transition: 0.2s;
+}
+
+.weeklybar-block:hover {
+  transform: scale(1.07);
+}
+
+.weeklybar-badges-inline {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.badge-semanal,
+.badge-total {
+  background-color: #d32f2f;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 🔥 Responsivo */
+@media (max-width: 480px) {
+
+  .weeklybar-block {
+    width: 32px;
+    height: 32px;
+  }
+
+  .weeklybar-day-label {
+    font-size: 12px;
+  }
+
+  .weeklybar-fullgrid {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .weeklybar-badges-inline {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .badge-semanal, .badge-total {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+}

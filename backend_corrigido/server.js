@@ -1,38 +1,71 @@
+require('dotenv').config();
+
+// Core & segurança
 const express = require('express');
-const mongoose = require('mongoose');
-const app = express();
-const PORT = 3000;
 const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const mongoose = require('mongoose');
 
+const app = express();
+
+// Middlewares básicos
+app.use(express.json());
+app.use(helmet());
+app.use(compression());
+
+// CORS restrito por variável de ambiente (pode ser lista separada por vírgula)
+const allowed = (process.env.CORS_ORIGIN || '*')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin(origin, cb) {
+    // permite ferramentas locais (sem origin) e wildcard
+    if (allowed.includes('*') || !origin) return cb(null, true);
+    return cb(null, allowed.includes(origin));
+  },
+  credentials: true
+}));
+
+// Models (mantém como estavam)
 const Usuario = require('./models/usuario.js');
-const Habito = require('./models/habito.js');
+const Habito   = require('./models/habito.js');
 const Registro = require('./models/registro.js');
-const Categoria = require('./models/categoria.js');
+const Categoria= require('./models/categoria.js');
+
+// Rotas
 const progressoRouter = require('./routes/progresso.js');
+const habitosRoutes   = require('./routes/habitos.js');
+const registroRouter = require('./routes/registro.js'); 
 
-// Habilita o CORS para todas as origens (pode ser customizado para origens específicas)
-app.use(cors());
-app.use(express.json()); // Para que o Express consiga entender JSON no corpo da requisição
 app.use('/progresso', progressoRouter);
+app.use('/habitos',   habitosRoutes);
+app.use('/registro', registroRouter);
 
-// Configuração do MongoDB
-const MONGO_URI = 'mongodb+srv://danielm26:newsenhamongodb@habitsappcluster.lhwikak.mongodb.net/?retryWrites=true&w=majority&appName=HabitsAppCluster'; // Substitua pela URI do MongoDB Atlas se necessário
+// Healthcheck pro Render/Netlify
+app.get('/health', (req, res) => res.json({ ok: true, ts: Date.now() }));
 
-// Conectando ao MongoDB
-mongoose.connect(MONGO_URI)
-  .then(() => {
-    console.log('Conectado ao MongoDB');
-  })
+app.get('/healthz', (_req, res) => res.status(200).json({ ok: true, ts: Date.now() }));
+
+
+// ===== MongoDB Atlas por ENV =====
+const MONGO_URI = process.env.MONGODB_URI;
+if (!MONGO_URI) {
+  console.error('❌ MONGODB_URI não definido. Configure a variável de ambiente.');
+  process.exit(1);
+}
+
+mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 10000 })
+  .then(() => console.log('✅ MongoDB conectado'))
   .catch(err => {
-    console.error('Erro ao conectar ao MongoDB:', err);
+    console.error('❌ Erro ao conectar no MongoDB:', err.message);
+    process.exit(1);
   });
 
-
-// importar e usar rotas
-const habitosRoutes = require("./routes/habitos");
-app.use("/habitos", habitosRoutes);
-
-// Iniciar o servidor
+// Porta dinâmica para Render/Heroku/etc.
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`🚀 API ouvindo em :${PORT}`);
 });

@@ -40,3 +40,26 @@ button {
 button:hover {
   background-color: #ff1a1a;
 }
+
+/* Remove overflow lateral, evitando corte no mobile */
+body, html {
+  overflow-x: hidden !important;
+}
+
+/* Wrapper para cancelar o padding lateral do Bootstrap no mobile */
+@media (max-width: 480px) {
+  .dashboard-fix {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
+
+.dashboard-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 16px;
+  margin: 0;
+  box-sizing: border-box;
+}
+

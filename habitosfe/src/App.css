@@ -40,3 +40,53 @@
 .read-the-docs {
   color: #888;
 }
+
+
+/* HEADER MINIMALISTA */
+.dash-minimal-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.dash-icon {
+  font-size: 18px;
+  margin-top: 1px;
+}
+
+.dash-minimal-header h3 {
+  margin: 0;
+  color: #d32f2f; /* Vermelho FireHabits */
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* Só aparece no modo offline */
+.dash-offline-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.dot-off {
+  width: 8px;
+  height: 8px;
+  background: #777;
+  border-radius: 50%;
+}
+
+.offline-text {
+  font-size: 12px;
+  color: #aaa;
+}
+
+/* Stats minimalistas */
+.dash-minimal-stats {
+  color: #888;
+  font-size: 12px;
+  margin-bottom: 14px;
+  margin-left: 2px;
+}

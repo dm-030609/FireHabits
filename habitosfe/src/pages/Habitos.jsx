@@ -37,17 +37,6 @@ function Habitos() {
     fetchHabitos();
   }, []);
 
-  {/*const concluirHabito = async (id) => {
-    try {
-      await axios.put(`http://localhost:3000/habitos/${id}`, { status: 'Concluído' });
-      setHabitos((prev) =>
-        prev.map((h) => (h._id === id ? { ...h, status: 'Concluído' } : h))
-      );
-      await salvarHabitoLocal({ ...habitos.find((h) => h._id === id), status: 'Concluído' });
-    } catch {
-      alert('Erro ao concluir hábito');
-    }
-  };*/}
 
   const concluirHabito = async (id) => {
     try {
