@@ -205,7 +205,7 @@ function EditarHabito() {
   const [lembretes, setLembretes] = useState([]);
 
   useEffect(() => {
-    axios.get(`/habitos/${id}`).then((res) => setHabito(res.data));
+    axios.get(`https://firehabits.onrender.com/habitos/${id}`).then((res) => setHabito(res.data));
     carregarLembretes();
   }, [id]);
 
@@ -219,7 +219,7 @@ function EditarHabito() {
 
     try {
       if (navigator.onLine) {
-        await axios.put(`/habitos/${id}`, habito);
+        await axios.put(`https://firehabits.onrender.com/habitos/${id}`, habito);
       } else {
         console.warn("📴 Editando hábito offline");
         console.log("🧩 ID do hábito:", id);

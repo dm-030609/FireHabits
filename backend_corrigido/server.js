@@ -11,7 +11,11 @@ const app = express();
 
 // Middlewares básicos
 app.use(express.json());
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
+
 app.use(compression());
 
 // CORS restrito por variável de ambiente (pode ser lista separada por vírgula)
@@ -22,12 +26,18 @@ const allowed = (process.env.CORS_ORIGIN || '*')
 
 app.use(cors({
   origin(origin, cb) {
-    // permite ferramentas locais (sem origin) e wildcard
-    if (allowed.includes('*') || !origin) return cb(null, true);
-    return cb(null, allowed.includes(origin));
+    // Permite ferramentas sem origin (ex: mobile, Postman, DevTools)
+    if (!origin || allowed.includes('*')) return cb(null, true);
+
+    if (allowed.includes(origin)) {
+      return cb(null, true);
+    } else {
+      return cb(new Error("CORS bloqueado: origem não permitida → " + origin), false);
+    }
   },
   credentials: true
 }));
+
 
 // Models (mantém como estavam)
 const Usuario = require('./models/usuario.js');

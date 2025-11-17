@@ -21,7 +21,7 @@ function Habitos() {
   useEffect(() => {
     const fetchHabitos = async () => {
       try {
-        const res = await axios.get('http://localhost:3000/habitos');
+        const res = await axios.get('https://firehabits.onrender.com/habitos');
         setHabitos(res.data);
         await salvarMultiplosHabitos(res.data);
       } catch (err) {
@@ -49,7 +49,7 @@ function Habitos() {
       const habitoAtualizado = { ...habitoAtual, status: 'Concluído' };
 
       if (navigator.onLine) {
-        await axios.put(`http://localhost:3000/habitos/${id}`, { status: 'Concluído' });
+        await axios.put(`https://firehabits.onrender.com/habitos/${id}`, { status: 'Concluído' });
       } else {
         await salvarAcaoPendente({
           type: 'concluir',
@@ -80,7 +80,7 @@ function Habitos() {
 
   const excluirHabito = async (id) => {
     if (navigator.onLine) {
-      await axios.delete(`http://localhost:3000/habitos/${id}`);
+      await axios.delete(`https://firehabits.onrender.com/habitos/${id}`);
     } else {
       console.warn("📴 Excluindo hábito localmente (offline)");
     }

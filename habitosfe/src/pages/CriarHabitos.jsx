@@ -42,7 +42,7 @@ function CriarHabito() {
     try {
       if (navigator.onLine) {
         console.log("🟢 ONLINE - salvando no backend...");
-        const res = await axios.post("/habitos", habito);
+        const res = await axios.post("https://firehabits.onrender.com/habitos", habito);
         if (res.data && res.data._id) {
           novoHabito = res.data;
         } else {
