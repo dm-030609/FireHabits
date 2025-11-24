@@ -41,12 +41,5 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true, // 👈 Vite não vai trocar a porta sozinho
-    proxy: {
-      '/progresso': { target: 'http://localhost:3000', changeOrigin: true },
-      '/habitos':   { target: 'http://localhost:3000', changeOrigin: true },
-      '/registro':  { target: 'http://localhost:3000', changeOrigin: true },
-      '/usuario':   { target: 'http://localhost:3000', changeOrigin: true },
-      '/categoria': { target: 'http://localhost:3000', changeOrigin: true } 
-    }
   }
 });
