@@ -1,93 +1,150 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Container, Row, Col, Card, Button, Spinner, Navbar, Nav } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
+
 import {
+  initDB,
   salvarMultiplosHabitos,
   listarHabitosLocal,
   removerHabitoLocal,
   salvarHabitoLocal,
+  salvarConclusaoDia,
+  pegarConclusaoDia
 } from '../utils/indexedDB.js';
+
 import { salvarAcaoPendente } from '../utils/syncDB.js';
-
-
 
 function Habitos() {
   const [habitos, setHabitos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchHabitos = async () => {
-      try {
-        const res = await axios.get('https://firehabits.onrender.com/habitos');
-        setHabitos(res.data);
-        await salvarMultiplosHabitos(res.data);
-      } catch (err) {
-        console.warn('Falha ao buscar da API, tentando IndexedDB...');
-        const locais = await listarHabitosLocal();
-        setHabitos(locais);
-        setError('Conectado via cache local');
-      } finally {
-        setLoading(false);
-      }
-    };
+  /* ======================================================
+     🔥 Função PRO: aplica status diário
+  ====================================================== */
+  const aplicarStatusDiario = useCallback(async (lista) => {
+    const hoje = new Date().toISOString().split("T")[0];
 
-    fetchHabitos();
+    const novaLista = [];
+
+    for (const h of lista) {
+      const concluido = await pegarConclusaoDia(h._id, hoje);
+
+      novaLista.push({
+        ...h,
+        statusHoje: concluido ? "Concluído" : "Pendente"
+      });
+    }
+
+    return novaLista;
   }, []);
 
+  /* ======================================================
+     🔥 Buscar hábitos (com fallback + status diário)
+  ====================================================== */
+  const fetchHabitos = useCallback(async () => {
+    try {
+      const res = await axios.get('/habitos');
+      let lista = res.data;
 
+      await salvarMultiplosHabitos(lista);
+
+      lista = await aplicarStatusDiario(lista);
+
+      setHabitos(lista);
+
+    } catch (err) {
+      console.warn("⚠ Backend falhou → carregando IndexedDB");
+
+      let locais = await listarHabitosLocal();
+      locais = await aplicarStatusDiario(locais);
+
+      setHabitos(locais);
+    } finally {
+      setLoading(false);
+    }
+  }, [aplicarStatusDiario]);
+
+  /* ======================================================
+     🔥 Inicialização PRO (IndexedDB inicializa só 1x)
+  ====================================================== */
+  useEffect(() => {
+    const start = async () => {
+      await initDB();      // IndexedDB pronto
+      await fetchHabitos();
+    };
+    start();
+  }, [fetchHabitos]);
+
+  /* ======================================================
+     🔥 Concluir hábito (otimizado + status diário)
+  ====================================================== */
   const concluirHabito = async (id) => {
     try {
+      const hoje = new Date().toISOString().split("T")[0];
+
       const habitoAtual = habitos.find(h => h._id === id);
+      if (!habitoAtual) throw new Error("Hábito não encontrado");
 
-      if (!habitoAtual) {
-        throw new Error("Hábito não encontrado");
-      }
+      // 1) Salvar conclusão diária local
+      await salvarConclusaoDia(id, hoje);
 
-      const habitoAtualizado = { ...habitoAtual, status: 'Concluído' };
+      // 2) Atualização visual imediata
+      const habitoUpdate = {
+        ...habitoAtual,
+        statusHoje: "Concluído"
+      };
 
+      setHabitos(prev =>
+        prev.map(h => h._id === id ? habitoUpdate : h)
+      );
+
+      await salvarHabitoLocal(habitoUpdate);
+
+      // 3) Se online → manda para backend
       if (navigator.onLine) {
-        await axios.put(`https://firehabits.onrender.com/habitos/${id}`, { status: 'Concluído' });
-      } else {
-        await salvarAcaoPendente({
-          type: 'concluir',
+        await axios.post(`/registro`, {
           habitoId: id,
-          dados: {
-            ...habitoAtual,
-            status: 'Concluído'
-          },
-          timestamp: new Date().getTime()
+          data: hoje
         });
-
-        console.log('✅ Ação armazenada localmente');
+      } else {
+        // offline → salva para sync
+        await salvarAcaoPendente({
+          type: 'concluir-dia',
+          habitoId: id,
+          data: hoje,
+          timestamp: Date.now()
+        });
       }
-
-      // Atualiza visualmente e local
-      await salvarHabitoLocal(habitoAtualizado);
-      setHabitos(prev => prev.map(h =>
-        h._id === id ? habitoAtualizado : h
-      ));
 
     } catch (err) {
       console.error("❌ Erro ao concluir hábito:", err);
-      alert("Erro ao concluir hábito");
+      alert("Erro ao concluir hábito (backend). Conclusão local foi salva.");
     }
   };
 
-
-
+  /* ======================================================
+     🔥 Excluir hábito
+  ====================================================== */
   const excluirHabito = async (id) => {
-    if (navigator.onLine) {
-      await axios.delete(`https://firehabits.onrender.com/habitos/${id}`);
-    } else {
-      console.warn("📴 Excluindo hábito localmente (offline)");
+    try {
+      if (navigator.onLine) {
+        await axios.delete(`/habitos/${id}`);
+      }
+
+      setHabitos(prev => prev.filter(h => h._id !== id));
+      await removerHabitoLocal(id);
+
+    } catch (err) {
+      console.error("Erro ao excluir:", err);
+      alert("Falha ao excluir hábito.");
     }
-    setHabitos(habitos.filter((h) => h._id !== id));
-    await removerHabitoLocal(id);
   };
 
+  /* ======================================================
+     🔥 UI
+  ====================================================== */
   return (
     <>
       <Navbar bg="dark" variant="dark" expand="lg" className="px-3">
@@ -109,95 +166,72 @@ function Habitos() {
             <Spinner animation="border" variant="danger" />
           </div>
         )}
-        {error && <div className="text-center text-warning">{error}</div>}
-
-        {console.log("🔥 Lista de hábitos:", habitos)}
 
         <Row className="justify-content-center px-2">
-          {Array.isArray(habitos) && habitos.length > 0 ? (
-            habitos.map((habito) => (
-              <Col
-                key={habito._id}
-                xs={12}
-                sm={6}
-                md={4}
-                lg={3}
-                className="mb-4 d-flex"
-              >
-                <Card className="bg-dark text-white shadow-sm rounded-4 p-3 w-100 h-100">
-                  <Card.Body className="d-flex flex-column">
-                    <Card.Title className="text-danger fw-bold">{habito.nome}</Card.Title>
-                    <Card.Text>{habito.descricao}</Card.Text>
-                    <Card.Text><strong>Frequência:</strong> {habito.frequencia}</Card.Text>
-                    <Card.Text><strong>Status:</strong> {habito.status}</Card.Text>
+          {habitos.length > 0 ? habitos.map((habito) => (
+            <Col key={habito._id} xs={12} sm={6} md={4} lg={3} className="mb-4 d-flex">
+              <Card className="bg-dark text-white shadow-sm rounded-4 p-3 w-100 h-100">
+                <Card.Body className="d-flex flex-column">
+                  <Card.Title className="text-danger fw-bold">{habito.nome}</Card.Title>
+                  <Card.Text>{habito.descricao}</Card.Text>
+                  <Card.Text><strong>Frequência:</strong> {habito.frequencia}</Card.Text>
+                  <Card.Text><strong>Status hoje:</strong> {habito.statusHoje}</Card.Text>
 
-                    <div className="d-flex flex-column gap-2 mt-auto pt-3">
-                      <div className="d-flex gap-2">
-                        <Button
-                          size="sm"
-                          style={{
-                            backgroundColor: '#fff',
-                            color: '#111',
-                            border: 'none',
-                            flex: 1,
-                            fontWeight: 'bold',
-                            borderRadius: '6px',
-                            transition: 'all 0.2s ease'
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f2f2f2'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}
-                          onClick={() => navigate(`/editar/${habito._id}`)}
-                        >
-                          Editar
-                        </Button>
+                  <div className="d-flex flex-column gap-2 mt-auto pt-3">
 
-                        <Button
-                          size="sm"
-                          disabled={habito.status === 'Concluído'}
-                          style={{
-                            backgroundColor: habito.status === 'Concluído' ? '#555' : '#e60000',
-                            color: '#fff',
-                            border: 'none',
-                            flex: 1,
-                            fontWeight: 'bold',
-                            borderRadius: '6px',
-                            transition: 'all 0.2s ease',
-                            cursor: habito.status === 'Concluído' ? 'not-allowed' : 'pointer'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (habito.status !== 'Concluído') e.currentTarget.style.backgroundColor = '#cc0000';
-                          }}
-                          onMouseLeave={(e) => {
-                            if (habito.status !== 'Concluído') e.currentTarget.style.backgroundColor = '#e60000';
-                          }}
-                          onClick={() => concluirHabito(habito._id)}
-                        >
-                          Concluir
-                        </Button>
-                      </div>
-
+                    <div className="d-flex gap-2">
                       <Button
                         size="sm"
                         style={{
-                          backgroundColor: '#333',
+                          backgroundColor: '#fff',
+                          color: '#111',
+                          border: 'none',
+                          flex: 1,
+                          fontWeight: 'bold',
+                          borderRadius: '6px'
+                        }}
+                        onClick={() => navigate(`/editar/${habito._id}`)}
+                      >
+                        Editar
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        disabled={habito.statusHoje === 'Concluído'}
+                        style={{
+                          backgroundColor: habito.statusHoje === 'Concluído' ? '#555' : '#e60000',
                           color: '#fff',
                           border: 'none',
+                          flex: 1,
                           fontWeight: 'bold',
                           borderRadius: '6px',
-                          transition: 'all 0.2s ease'
+                          cursor: habito.statusHoje === 'Concluído' ? 'not-allowed' : 'pointer'
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#555'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#333'}
-                        onClick={() => excluirHabito(habito._id)}
+                        onClick={() => concluirHabito(habito._id)}
                       >
-                        Excluir
+                        Concluir
                       </Button>
                     </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))
-          ) : (
+
+                    <Button
+                      size="sm"
+                      style={{
+                        backgroundColor: '#333',
+                        color: '#fff',
+                        border: 'none',
+                        fontWeight: 'bold',
+                        borderRadius: '6px'
+                      }}
+                      onClick={() => excluirHabito(habito._id)}
+                    >
+                      Excluir
+                    </Button>
+
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          )) : (
             <p className="text-center text-muted">Nenhum hábito encontrado.</p>
           )}
         </Row>
@@ -218,14 +252,12 @@ function Habitos() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '1.5rem',
-            transition: 'transform 0.2s ease-in-out',
+            fontSize: '1.5rem'
           }}
-          onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.1)')}
-          onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
         >
           🔥
         </Link>
+
       </Container>
     </>
   );
