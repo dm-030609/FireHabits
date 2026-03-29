@@ -19,8 +19,7 @@ function Dashboard() {
     try {
       if (navigator.onLine) {
         console.log("🟢 ONLINE → buscando progresso do backend...");
-
-        const response = await axios.get("https://firehabits.onrender.com/progresso/semana");
+        const response = await axios.get("/progresso/semana");
         const dados = response.data;
 
         // Salvar no IndexedDB
