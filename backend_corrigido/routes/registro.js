@@ -1,6 +1,7 @@
 // backend_corrigido/routes/registro.js
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Registro = require('../models/registro.js');
 
 // Helpers (opcional, caso queira normalizar aqui também)
@@ -35,7 +36,7 @@ router.post('/', async (req, res, next) => {
 router.get('/', async (req, res, next) => {
   try {
     const q = {};
-    if (req.query.habitoId)  q.habitoId  = req.query.habitoId;
+    if (req.query.habitoId) q.habitoId = req.query.habitoId;
     if (req.query.usuarioId) q.usuarioId = req.query.usuarioId;
 
     if (req.query.ini || req.query.fim) {
@@ -49,7 +50,7 @@ router.get('/', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /registro/heatmap?meses=12  -> contagem de conclusões por dia
+// GET /registro/heatmap?meses=12&habitoId=xxx  -> contagem de conclusões por dia
 router.get('/heatmap', async (req, res, next) => {
   try {
     const meses = parseInt(req.query.meses) || 12;
@@ -57,8 +58,13 @@ router.get('/heatmap', async (req, res, next) => {
     ini.setUTCMonth(ini.getUTCMonth() - meses);
     ini.setUTCHours(0, 0, 0, 0);
 
+    const matchStage = { valor: true, data: { $gte: ini } };
+    if (req.query.habitoId) {
+      matchStage.habitoId = mongoose.Types.ObjectId.createFromHexString(req.query.habitoId);
+    }
+
     const resultado = await Registro.aggregate([
-      { $match: { valor: true, data: { $gte: ini } } },
+      { $match: matchStage },
       { $group: { _id: '$data', count: { $sum: 1 } } },
       { $sort: { _id: 1 } },
     ]);
@@ -109,7 +115,7 @@ router.delete('/by-day', async (req, res, next) => {
     // início e fim do dia em UTC
     const d = new Date(data);
     const start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-    const end   = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1));
+    const end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1));
 
     const r = await Registro.findOneAndDelete({
       habitoId,

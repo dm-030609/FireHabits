@@ -50,11 +50,15 @@ const progressoRouter = require('./routes/progresso.js');
 const habitosRoutes   = require('./routes/habitos.js');
 const registroRouter = require('./routes/registro.js');
 const diarioRouter   = require('./routes/diario.js');
+const tarefasRouter  = require('./routes/tarefas.js');
+const blocosRouter   = require('./routes/blocos.js');
 
 app.use('/progresso', progressoRouter);
 app.use('/habitos',   habitosRoutes);
 app.use('/registro', registroRouter);
 app.use('/diario',   diarioRouter);
+app.use('/tarefas',  tarefasRouter);
+app.use('/blocos',   blocosRouter);
 
 // Healthcheck pro Render/Netlify
 app.get('/health', (req, res) => res.json({ ok: true, ts: Date.now() }));

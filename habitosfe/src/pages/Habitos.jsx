@@ -14,32 +14,8 @@ import {
 
 import { salvarAcaoPendente } from '../utils/syncDB.js';
 import StreakFlame from '../components/StreakFlame.jsx';
-
-const navStyle = {
-  backgroundColor: '#0a0a0a',
-  borderBottom: '1px solid #222',
-  padding: '12px 16px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  position: 'sticky',
-  top: 0,
-  zIndex: 100,
-};
-
-const navLinkStyle = {
-  color: '#888',
-  textDecoration: 'none',
-  fontSize: '0.85rem',
-  fontWeight: 'bold',
-  padding: '6px 12px',
-  borderRadius: '6px',
-};
-
-const navLinkActiveStyle = {
-  ...navLinkStyle,
-  color: '#e60000',
-};
+import Heatmap from '../components/Heatmap.jsx';
+import PageHeader from '../components/PageHeader.jsx';
 
 function Habitos() {
   const [habitos, setHabitos] = useState([]);
@@ -125,18 +101,8 @@ function Habitos() {
   };
 
   return (
-    <div style={{ backgroundColor: '#111', minHeight: '100vh' }}>
-      {/* Navbar */}
-      <nav style={navStyle}>
-        <Link to="/" style={{ textDecoration: 'none' }}>
-          <span style={{ color: '#e60000', fontWeight: 'bold', fontSize: '1.1rem' }}>FireHabits</span>
-        </Link>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          <Link to="/habitos" style={navLinkActiveStyle}>Hábitos</Link>
-          <Link to="/dashboard" style={navLinkStyle}>Dashboard</Link>
-          <Link to="/diario" style={navLinkStyle}>Diário</Link>
-        </div>
-      </nav>
+    <div style={{ backgroundColor: '#111', minHeight: '100vh', paddingBottom: '80px' }}>
+      <PageHeader titulo="Habitos" />
 
       <div style={{ maxWidth: '520px', margin: '0 auto', padding: '16px' }}>
 
@@ -302,6 +268,9 @@ function Habitos() {
                     Excluir
                   </button>
                 </div>
+
+                {/* Heatmap individual do hábito */}
+                <Heatmap habitoId={habito._id} refreshTrigger={habito.statusHoje} compact />
               </div>
             );
           })}

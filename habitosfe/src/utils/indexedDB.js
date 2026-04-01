@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 
 const DB_NAME = 'fireHabitsDB';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 // Stores
 const HABITO_STORE = 'habitos';
@@ -10,6 +10,7 @@ const LEMBRETE_STORE = 'lembretes';
 const CONCLUSAO_STORE = 'conclusoes';
 const STORE_PROGRESO = 'progressoSemana';
 const DIARIO_STORE = 'diario';
+const TAREFA_STORE = 'tarefas';
 
 // Cache para evitar inicialização múltipla
 let dbCache = null;
@@ -56,6 +57,11 @@ export async function initDB() {
       // 6) Diário de evolução
       if (!db.objectStoreNames.contains(DIARIO_STORE)) {
         db.createObjectStore(DIARIO_STORE, { keyPath: 'data' });
+      }
+
+      // 7) Tarefas (Brain Dump)
+      if (!db.objectStoreNames.contains(TAREFA_STORE)) {
+        db.createObjectStore(TAREFA_STORE, { keyPath: '_id' });
       }
     },
   });
@@ -151,4 +157,32 @@ export async function pegarDiarioDia(data) {
 export async function listarDiarioLocal() {
   const db = await initDB();
   return await db.getAll(DIARIO_STORE);
+}
+
+/* ============================================
+   Tarefas (Brain Dump)
+============================================ */
+export async function salvarTarefaLocal(tarefa) {
+  const db = await initDB();
+  if (!tarefa._id) throw new Error('Tarefa precisa de _id');
+  await db.put(TAREFA_STORE, tarefa);
+}
+
+export async function salvarMultiplasTarefas(tarefas) {
+  const db = await initDB();
+  const tx = db.transaction(TAREFA_STORE, 'readwrite');
+  for (const t of tarefas) {
+    if (t._id) tx.store.put(t);
+  }
+  await tx.done;
+}
+
+export async function listarTarefasLocal() {
+  const db = await initDB();
+  return await db.getAll(TAREFA_STORE);
+}
+
+export async function removerTarefaLocal(id) {
+  const db = await initDB();
+  await db.delete(TAREFA_STORE, id);
 }

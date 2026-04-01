@@ -8,8 +8,12 @@ const WEEKS = 52;
 const DAYS_LABELS = ['', 'Seg', '', 'Qua', '', 'Sex', ''];
 const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-function getColor(count) {
+function getColor(count, isCompact) {
   if (count === 0) return '#1a1a1a';
+  if (isCompact) {
+    // Individual heatmap: count is always 0 or 1, so make it bright
+    return '#e60000';
+  }
   if (count === 1) return '#5c1010';
   if (count === 2) return '#8b1a1a';
   if (count <= 4) return '#c62828';
@@ -31,12 +35,14 @@ function buildGrid(heatmapData) {
 
   const agora = new Date();
   const hoje = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()));
-  const dias = WEEKS * 7;
 
-  // Encontrar o domingo que inicia o grid (UTC)
-  const inicio = new Date(hoje);
-  inicio.setUTCDate(inicio.getUTCDate() - dias + 1);
-  inicio.setUTCDate(inicio.getUTCDate() - inicio.getUTCDay());
+  // Fim do grid: sábado da semana atual (garante que hoje está incluído)
+  const fimSemana = new Date(hoje);
+  fimSemana.setUTCDate(fimSemana.getUTCDate() + (6 - fimSemana.getUTCDay()));
+
+  // Início do grid: WEEKS semanas antes do fim
+  const inicio = new Date(fimSemana);
+  inicio.setUTCDate(inicio.getUTCDate() - (WEEKS * 7) + 1);
 
   const grid = [];
   for (let i = 0; i < WEEKS; i++) {
@@ -71,14 +77,16 @@ function getMonthPositions(grid) {
   return positions;
 }
 
-function Heatmap() {
+function Heatmap({ habitoId, refreshTrigger, compact }) {
   const [grid, setGrid] = useState([]);
   const [totalConclusoes, setTotalConclusoes] = useState(0);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axios.get('/registro/heatmap?meses=12');
+        let url = '/registro/heatmap?meses=12';
+        if (habitoId) url += `&habitoId=${habitoId}`;
+        const res = await axios.get(url);
         const data = res.data;
         setGrid(buildGrid(data));
         setTotalConclusoes(data.reduce((sum, d) => sum + d.count, 0));
@@ -86,43 +94,61 @@ function Heatmap() {
         setGrid(buildGrid([]));
       }
     };
-    fetch();
-  }, []);
+    fetchData();
+  }, [habitoId, refreshTrigger]);
 
   if (grid.length === 0) return null;
 
   const monthPositions = getMonthPositions(grid);
-  const svgWidth = WEEKS * TOTAL + 30;
-  const svgHeight = 7 * TOTAL + 30;
+
+  // Compact mode: smaller cells, no labels
+  const cellSize = compact ? 8 : CELL_SIZE;
+  const cellGap = compact ? 2 : CELL_GAP;
+  const total = cellSize + cellGap;
+  const leftPad = compact ? 0 : 30;
+  const topPad = compact ? 0 : 16;
+
+  const svgWidth = WEEKS * total + leftPad;
+  const svgHeight = 7 * total + topPad;
 
   return (
-    <div style={{ marginTop: '24px', marginBottom: '24px' }}>
-      <div className="d-flex justify-content-between align-items-center mb-2 px-1">
-        <span style={{ color: '#999', fontSize: '0.85rem' }}>
-          {totalConclusoes} conclusões no último ano
-        </span>
-        <div className="d-flex align-items-center gap-1" style={{ fontSize: '0.75rem', color: '#666' }}>
-          <span>Menos</span>
-          {[0, 1, 2, 3, 5].map((c, i) => (
-            <div
-              key={i}
-              style={{
-                width: CELL_SIZE,
-                height: CELL_SIZE,
-                backgroundColor: getColor(c),
-                borderRadius: '2px',
-                border: '1px solid #222',
-              }}
-            />
-          ))}
-          <span>Mais</span>
+    <div style={{ marginTop: compact ? '8px' : '24px', marginBottom: compact ? '0' : '24px' }}>
+      {!compact && (
+        <div className="d-flex justify-content-between align-items-center mb-2 px-1">
+          <span style={{ color: '#999', fontSize: '0.85rem' }}>
+            {totalConclusoes} conclusões no último ano
+          </span>
+          <div className="d-flex align-items-center gap-1" style={{ fontSize: '0.75rem', color: '#666' }}>
+            <span>Menos</span>
+            {[0, 1, 2, 3, 5].map((c, i) => (
+              <div
+                key={i}
+                style={{
+                  width: CELL_SIZE,
+                  height: CELL_SIZE,
+                  backgroundColor: getColor(c, false),
+                  borderRadius: '2px',
+                  border: '1px solid #222',
+                }}
+              />
+            ))}
+            <span>Mais</span>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div style={{ overflowX: 'auto', paddingBottom: '4px' }}>
+      {compact && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
+          <span style={{ color: '#666', fontSize: '0.7rem' }}>
+            {totalConclusoes} dias
+          </span>
+        </div>
+      )}
+
+      <div style={{ overflowX: 'auto', paddingBottom: compact ? '0' : '4px' }}>
         <svg width={svgWidth} height={svgHeight} style={{ display: 'block' }}>
-          {/* Month labels */}
-          {monthPositions.map((mp, i) => (
+          {/* Month labels (full mode only) */}
+          {!compact && monthPositions.map((mp, i) => (
             <text
               key={i}
               x={mp.x + 30}
@@ -134,8 +160,8 @@ function Heatmap() {
             </text>
           ))}
 
-          {/* Day labels */}
-          {DAYS_LABELS.map((label, i) => (
+          {/* Day labels (full mode only) */}
+          {!compact && DAYS_LABELS.map((label, i) => (
             label && (
               <text
                 key={i}
@@ -154,16 +180,16 @@ function Heatmap() {
             week.map((day, di) => (
               <rect
                 key={`${wi}-${di}`}
-                x={wi * TOTAL + 30}
-                y={di * TOTAL + 16}
-                width={CELL_SIZE}
-                height={CELL_SIZE}
-                rx="2"
-                fill={day.count < 0 ? '#0d0d0d' : getColor(day.count)}
+                x={wi * total + leftPad}
+                y={di * total + topPad}
+                width={cellSize}
+                height={cellSize}
+                rx={compact ? 1 : 2}
+                fill={day.count < 0 ? '#0d0d0d' : getColor(day.count, compact)}
                 stroke="#222"
-                strokeWidth="1"
+                strokeWidth="0.5"
               >
-                <title>{day.date}: {day.count < 0 ? '-' : day.count} conclusões</title>
+                <title>{day.date}: {day.count < 0 ? '-' : day.count}</title>
               </rect>
             ))
           )}

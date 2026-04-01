@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import WeeklyBar from "../components/WeeklyBar.jsx";
-import Heatmap from "../components/Heatmap.jsx";
 import { Link } from "react-router-dom";
+import PageHeader from "../components/PageHeader.jsx";
 import {
   salvarProgressoSemana,
   carregarProgressoSemana,
@@ -11,32 +11,6 @@ import {
   pegarDiarioDia,
 } from "../utils/indexedDB.js";
 import { salvarAcaoPendente } from "../utils/syncDB.js";
-
-const navStyle = {
-  backgroundColor: '#0a0a0a',
-  borderBottom: '1px solid #222',
-  padding: '12px 16px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  position: 'sticky',
-  top: 0,
-  zIndex: 100,
-};
-
-const navLinkStyle = {
-  color: '#888',
-  textDecoration: 'none',
-  fontSize: '0.85rem',
-  fontWeight: 'bold',
-  padding: '6px 12px',
-  borderRadius: '6px',
-};
-
-const navLinkActiveStyle = {
-  ...navLinkStyle,
-  color: '#e60000',
-};
 
 const inputStyle = {
   backgroundColor: '#111',
@@ -173,12 +147,8 @@ function Dashboard() {
   // Loading state
   if (loading) {
     return (
-      <div style={{ backgroundColor: '#111', minHeight: '100vh' }}>
-        <nav style={navStyle}>
-          <Link to="/" style={{ textDecoration: 'none' }}>
-            <span style={{ color: '#e60000', fontWeight: 'bold', fontSize: '1.1rem' }}>FireHabits</span>
-          </Link>
-        </nav>
+      <div style={{ backgroundColor: '#111', minHeight: '100vh', paddingBottom: '80px' }}>
+        <PageHeader titulo="Stats" />
         <div style={{ textAlign: 'center', padding: '60px 0' }}>
           <div style={{
             width: '32px',
@@ -198,12 +168,8 @@ function Dashboard() {
 
   if (!dadosSemana || !dadosSemana.habitos) {
     return (
-      <div style={{ backgroundColor: '#111', minHeight: '100vh' }}>
-        <nav style={navStyle}>
-          <Link to="/" style={{ textDecoration: 'none' }}>
-            <span style={{ color: '#e60000', fontWeight: 'bold', fontSize: '1.1rem' }}>FireHabits</span>
-          </Link>
-        </nav>
+      <div style={{ backgroundColor: '#111', minHeight: '100vh', paddingBottom: '80px' }}>
+        <PageHeader titulo="Stats" />
         <div style={{ textAlign: 'center', padding: '60px 0' }}>
           <p style={{ color: '#666', fontSize: '0.95rem' }}>Nenhum dado disponível.</p>
         </div>
@@ -214,18 +180,8 @@ function Dashboard() {
   const habitos = dadosSemana.habitos;
 
   return (
-    <div style={{ backgroundColor: '#111', minHeight: '100vh' }}>
-      {/* Navbar */}
-      <nav style={navStyle}>
-        <Link to="/" style={{ textDecoration: 'none' }}>
-          <span style={{ color: '#e60000', fontWeight: 'bold', fontSize: '1.1rem' }}>FireHabits</span>
-        </Link>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          <Link to="/habitos" style={navLinkStyle}>Hábitos</Link>
-          <Link to="/dashboard" style={navLinkActiveStyle}>Dashboard</Link>
-          <Link to="/diario" style={navLinkStyle}>Diário</Link>
-        </div>
-      </nav>
+    <div style={{ backgroundColor: '#111', minHeight: '100vh', paddingBottom: '80px' }}>
+      <PageHeader titulo="Stats" />
 
       <div style={{ maxWidth: '620px', margin: '0 auto', padding: '16px' }}>
 
@@ -265,18 +221,6 @@ function Dashboard() {
             );
           })}
         </div>
-
-        {/* Heatmap */}
-        <h3 style={{
-          color: '#fff',
-          textAlign: 'center',
-          fontSize: '1.1rem',
-          fontWeight: 'bold',
-          marginBottom: '8px',
-        }}>
-          {dashTab === 'Destrutivo' ? 'Dias de Resistência' : 'Mapa de Fogo'}
-        </h3>
-        <Heatmap />
 
         {/* Weekly Progress */}
         <h3 style={{

@@ -3,32 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { initDB, salvarDiarioLocal, pegarDiarioDia } from '../utils/indexedDB.js';
 import { salvarAcaoPendente } from '../utils/syncDB.js';
-
-const navStyle = {
-  backgroundColor: '#0a0a0a',
-  borderBottom: '1px solid #222',
-  padding: '12px 16px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  position: 'sticky',
-  top: 0,
-  zIndex: 100,
-};
-
-const navLinkStyle = {
-  color: '#888',
-  textDecoration: 'none',
-  fontSize: '0.85rem',
-  fontWeight: 'bold',
-  padding: '6px 12px',
-  borderRadius: '6px',
-};
-
-const navLinkActiveStyle = {
-  ...navLinkStyle,
-  color: '#e60000',
-};
+import PageHeader from '../components/PageHeader.jsx';
 
 const inputStyle = {
   backgroundColor: '#111',
@@ -121,18 +96,8 @@ function Diario() {
   };
 
   return (
-    <div style={{ backgroundColor: '#111', minHeight: '100vh' }}>
-      {/* Navbar */}
-      <nav style={navStyle}>
-        <Link to="/" style={{ textDecoration: 'none' }}>
-          <span style={{ color: '#e60000', fontWeight: 'bold', fontSize: '1.1rem' }}>FireHabits</span>
-        </Link>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          <Link to="/habitos" style={navLinkStyle}>Hábitos</Link>
-          <Link to="/dashboard" style={navLinkStyle}>Dashboard</Link>
-          <Link to="/diario" style={navLinkActiveStyle}>Diário</Link>
-        </div>
-      </nav>
+    <div style={{ backgroundColor: '#111', minHeight: '100vh', paddingBottom: '80px' }}>
+      <PageHeader titulo="Diario" />
 
       <div style={{ maxWidth: '520px', margin: '0 auto', padding: '16px' }}>
         <h2 style={{
