@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 
 const DB_NAME = 'fireHabitsDB';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 // Stores
 const HABITO_STORE = 'habitos';
@@ -9,6 +9,7 @@ const ACAO_STORE = 'pendentes';
 const LEMBRETE_STORE = 'lembretes';
 const CONCLUSAO_STORE = 'conclusoes';
 const STORE_PROGRESO = 'progressoSemana';
+const DIARIO_STORE = 'diario';
 
 // Cache para evitar inicialização múltipla
 let dbCache = null;
@@ -50,6 +51,11 @@ export async function initDB() {
       // 5) Progresso semanal
       if (!db.objectStoreNames.contains(STORE_PROGRESO)) {
         db.createObjectStore(STORE_PROGRESO);
+      }
+
+      // 6) Diário de evolução
+      if (!db.objectStoreNames.contains(DIARIO_STORE)) {
+        db.createObjectStore(DIARIO_STORE, { keyPath: 'data' });
       }
     },
   });
@@ -127,4 +133,22 @@ export async function carregarProgressoSemana() {
     console.error("❌ Erro ao carregar progresso semanal:", err);
     return null;
   }
+}
+
+/* ============================================
+   Diário de evolução
+============================================ */
+export async function salvarDiarioLocal(entrada) {
+  const db = await initDB();
+  await db.put(DIARIO_STORE, entrada);
+}
+
+export async function pegarDiarioDia(data) {
+  const db = await initDB();
+  return await db.get(DIARIO_STORE, data) || null;
+}
+
+export async function listarDiarioLocal() {
+  const db = await initDB();
+  return await db.getAll(DIARIO_STORE);
 }

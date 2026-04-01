@@ -55,8 +55,22 @@ export async function sincronizarAcoesPendentes() {
           });
           break;
 
+        case 'concluir-dia':
+          await axios.post(`/registro`, {
+            habitoId: acao.habitoId,
+            data: acao.data,
+          });
+          break;
+
         case 'excluir':
           await axios.delete(`/habitos/${acao.habitoId}`);
+          break;
+
+        case 'salvar-diario':
+          await axios.post(`/diario`, {
+            data: acao.data,
+            conteudo: acao.conteudo,
+          });
           break;
 
         default:

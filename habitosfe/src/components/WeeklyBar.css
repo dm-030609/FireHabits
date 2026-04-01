@@ -1,29 +1,25 @@
 .weeklybar-container {
-  background: #000;
-  padding: 16px;
+  background: #1a1a1a;
+  padding: 14px 16px;
   border-radius: 10px;
+  border: 1px solid #2a2a2a;
   color: #fff;
-  margin-bottom: 20px;
-  max-width: 620px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-bottom: 12px;
 }
 
 .weeklybar-title {
-  color: #d32f2f;
-  font-weight: 600;
-  font-size: 18px;
+  color: #ccc;
+  font-weight: 700;
+  font-size: 0.95rem;
   margin-bottom: 10px;
 }
 
-/* GRID: 7 colunas + área do badge */
 .weeklybar-fullgrid {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
-/* Coluna com LETRA + QUADRADO empilhados */
 .weeklybar-col {
   display: flex;
   flex-direction: column;
@@ -31,67 +27,76 @@
 }
 
 .weeklybar-day-label {
-  font-size: 14px;
-  color: #ccc;
+  font-size: 0.7rem;
+  color: #666;
   margin-bottom: 4px;
+  font-weight: bold;
 }
 
 .weeklybar-block {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 6px;
-  transition: 0.2s;
+  transition: transform 0.15s;
 }
 
 .weeklybar-block:hover {
-  transform: scale(1.07);
+  transform: scale(1.1);
+}
+
+.weeklybar-block-clickable {
+  cursor: pointer;
 }
 
 .weeklybar-badges-inline {
   display: flex;
   flex-direction: row;
-  gap: 8px;
+  gap: 6px;
   margin-left: auto;
 }
 
 .badge-semanal,
 .badge-total {
-  background-color: #d32f2f;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 14px;
+  background-color: #222;
+  border: 1px solid #333;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
   font-weight: bold;
-  color: white;
+  color: #e60000;
   display: inline-flex;
   align-items: center;
 }
 
-/* 🔥 Responsivo */
-@media (max-width: 480px) {
+.badge-total {
+  color: #888;
+}
 
+@media (max-width: 480px) {
   .weeklybar-block {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
   }
 
   .weeklybar-day-label {
-    font-size: 12px;
+    font-size: 0.65rem;
   }
 
   .weeklybar-fullgrid {
     flex-wrap: wrap;
     justify-content: center;
-    gap: 10px;
+    gap: 6px;
   }
 
   .weeklybar-badges-inline {
     margin-left: 0;
     width: 100%;
     justify-content: center;
+    margin-top: 8px;
   }
 
   .badge-semanal, .badge-total {
-    font-size: 12px;
-    padding: 4px 10px;
+    font-size: 0.75rem;
+    padding: 3px 8px;
   }
 }

@@ -69,9 +69,10 @@ router.get("/semana", async (req, res) => {
       progressoPorHabito[h._id] = {
         habitoId: h._id,
         nome: h.nome,
+        tipo: h.tipo || 'Construtivo',
         progresso: Array(7).fill(false),
         semanal: 0,
-        total: 0, // preenchido depois
+        total: 0,
       };
     });
 

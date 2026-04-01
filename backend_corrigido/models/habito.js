@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const habitoSchema = new mongoose.Schema({
   nome: String,
   descricao: String,
-  frequencia: String, // Diário, Semanal, etc.
+  frequencia: String,
+  tipo: { type: String, enum: ['Construtivo', 'Destrutivo'], default: 'Construtivo' },
   status: { type: String, enum: ['Ativo', 'Inativo', 'Pendente', 'Concluído'] },
   categoria: { type: mongoose.Schema.Types.ObjectId, ref: 'Categoria' },
   usuarioId: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario' },

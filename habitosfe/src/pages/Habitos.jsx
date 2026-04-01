@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Container, Row, Col, Card, Button, Spinner, Navbar, Nav } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 
 import {
@@ -14,102 +13,93 @@ import {
 } from '../utils/indexedDB.js';
 
 import { salvarAcaoPendente } from '../utils/syncDB.js';
+import StreakFlame from '../components/StreakFlame.jsx';
+
+const navStyle = {
+  backgroundColor: '#0a0a0a',
+  borderBottom: '1px solid #222',
+  padding: '12px 16px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  position: 'sticky',
+  top: 0,
+  zIndex: 100,
+};
+
+const navLinkStyle = {
+  color: '#888',
+  textDecoration: 'none',
+  fontSize: '0.85rem',
+  fontWeight: 'bold',
+  padding: '6px 12px',
+  borderRadius: '6px',
+};
+
+const navLinkActiveStyle = {
+  ...navLinkStyle,
+  color: '#e60000',
+};
 
 function Habitos() {
   const [habitos, setHabitos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [tabAtiva, setTabAtiva] = useState('Construtivo');
   const navigate = useNavigate();
 
-  /* ======================================================
-     🔥 Função PRO: aplica status diário
-  ====================================================== */
   const aplicarStatusDiario = useCallback(async (lista) => {
     const hoje = new Date().toISOString().split("T")[0];
-
     const novaLista = [];
-
     for (const h of lista) {
       const concluido = await pegarConclusaoDia(h._id, hoje);
-
       novaLista.push({
         ...h,
         statusHoje: concluido ? "Concluído" : "Pendente"
       });
     }
-
     return novaLista;
   }, []);
 
-  /* ======================================================
-     🔥 Buscar hábitos (com fallback + status diário)
-  ====================================================== */
   const fetchHabitos = useCallback(async () => {
     try {
       const res = await axios.get('/habitos');
       let lista = res.data;
-
       await salvarMultiplosHabitos(lista);
-
       lista = await aplicarStatusDiario(lista);
-
       setHabitos(lista);
-
     } catch (err) {
-      console.warn("⚠ Backend falhou → carregando IndexedDB");
-
+      console.warn("Backend falhou, carregando IndexedDB");
       let locais = await listarHabitosLocal();
       locais = await aplicarStatusDiario(locais);
-
       setHabitos(locais);
     } finally {
       setLoading(false);
     }
   }, [aplicarStatusDiario]);
 
-  /* ======================================================
-     🔥 Inicialização PRO (IndexedDB inicializa só 1x)
-  ====================================================== */
   useEffect(() => {
     const start = async () => {
-      await initDB();      // IndexedDB pronto
+      await initDB();
       await fetchHabitos();
     };
     start();
   }, [fetchHabitos]);
 
-  /* ======================================================
-     🔥 Concluir hábito (otimizado + status diário)
-  ====================================================== */
   const concluirHabito = async (id) => {
     try {
       const hoje = new Date().toISOString().split("T")[0];
-
       const habitoAtual = habitos.find(h => h._id === id);
       if (!habitoAtual) throw new Error("Hábito não encontrado");
 
-      // 1) Salvar conclusão diária local
       await salvarConclusaoDia(id, hoje);
 
-      // 2) Atualização visual imediata
-      const habitoUpdate = {
-        ...habitoAtual,
-        statusHoje: "Concluído"
-      };
-
-      setHabitos(prev =>
-        prev.map(h => h._id === id ? habitoUpdate : h)
-      );
-
+      const habitoUpdate = { ...habitoAtual, statusHoje: "Concluído" };
+      setHabitos(prev => prev.map(h => h._id === id ? habitoUpdate : h));
       await salvarHabitoLocal(habitoUpdate);
 
-      // 3) Se online → manda para backend
       if (navigator.onLine) {
-        await axios.post(`/registro`, {
-          habitoId: id,
-          data: hoje
-        });
+        await axios.post(`/registro`, { habitoId: id, data: hoje });
       } else {
-        // offline → salva para sync
         await salvarAcaoPendente({
           type: 'concluir-dia',
           habitoId: id,
@@ -117,149 +107,243 @@ function Habitos() {
           timestamp: Date.now()
         });
       }
-
     } catch (err) {
-      console.error("❌ Erro ao concluir hábito:", err);
-      alert("Erro ao concluir hábito (backend). Conclusão local foi salva.");
+      console.error("Erro ao concluir hábito:", err);
     }
   };
 
-  /* ======================================================
-     🔥 Excluir hábito
-  ====================================================== */
   const excluirHabito = async (id) => {
     try {
       if (navigator.onLine) {
         await axios.delete(`/habitos/${id}`);
       }
-
       setHabitos(prev => prev.filter(h => h._id !== id));
       await removerHabitoLocal(id);
-
     } catch (err) {
       console.error("Erro ao excluir:", err);
-      alert("Falha ao excluir hábito.");
     }
   };
 
-  /* ======================================================
-     🔥 UI
-  ====================================================== */
   return (
-    <>
-      <Navbar bg="dark" variant="dark" expand="lg" className="px-3">
-        <Navbar.Brand as={Link} to="/" className="fw-bold text-danger">FireHabits</Navbar.Brand>
-        <Navbar.Toggle />
-        <Navbar.Collapse>
-          <Nav className="ms-auto">
-            <Nav.Link as={Link} to="/">Início</Nav.Link>
-            <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
-          </Nav>
-        </Navbar.Collapse>
-      </Navbar>
+    <div style={{ backgroundColor: '#111', minHeight: '100vh' }}>
+      {/* Navbar */}
+      <nav style={navStyle}>
+        <Link to="/" style={{ textDecoration: 'none' }}>
+          <span style={{ color: '#e60000', fontWeight: 'bold', fontSize: '1.1rem' }}>FireHabits</span>
+        </Link>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <Link to="/habitos" style={navLinkActiveStyle}>Hábitos</Link>
+          <Link to="/dashboard" style={navLinkStyle}>Dashboard</Link>
+          <Link to="/diario" style={navLinkStyle}>Diário</Link>
+        </div>
+      </nav>
 
-      <Container fluid="md" className="py-4">
-        <h2 className="text-danger mb-3 text-center fs-2">Meus Hábitos</h2>
+      <div style={{ maxWidth: '520px', margin: '0 auto', padding: '16px' }}>
+
+        {/* Tabs */}
+        <div style={{
+          display: 'flex',
+          gap: '4px',
+          marginBottom: '20px',
+          backgroundColor: '#0a0a0a',
+          borderRadius: '10px',
+          padding: '4px',
+        }}>
+          {[
+            { key: 'Construtivo', label: 'Construtivos', color: '#4caf50' },
+            { key: 'Destrutivo', label: 'Destrutivos', color: '#ff6600' },
+          ].map((tab) => {
+            const ativo = tabAtiva === tab.key;
+            const count = habitos.filter(h => (h.tipo || 'Construtivo') === tab.key).length;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setTabAtiva(tab.key)}
+                style={{
+                  flex: 1,
+                  padding: '10px 8px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  border: 'none',
+                  backgroundColor: ativo ? '#1a1a1a' : 'transparent',
+                  color: ativo ? tab.color : '#555',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {tab.label} {count > 0 && <span style={{ opacity: 0.6 }}>({count})</span>}
+              </button>
+            );
+          })}
+        </div>
 
         {loading && (
-          <div className="text-center">
-            <Spinner animation="border" variant="danger" />
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              border: '3px solid #333',
+              borderTopColor: '#e60000',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+              margin: '0 auto',
+            }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
         )}
 
-        <Row className="justify-content-center px-2">
-          {habitos.length > 0 ? habitos.map((habito) => (
-            <Col key={habito._id} xs={12} sm={6} md={4} lg={3} className="mb-4 d-flex">
-              <Card className="bg-dark text-white shadow-sm rounded-4 p-3 w-100 h-100">
-                <Card.Body className="d-flex flex-column">
-                  <Card.Title className="text-danger fw-bold">{habito.nome}</Card.Title>
-                  <Card.Text>{habito.descricao}</Card.Text>
-                  <Card.Text><strong>Frequência:</strong> {habito.frequencia}</Card.Text>
-                  <Card.Text><strong>Status hoje:</strong> {habito.statusHoje}</Card.Text>
-
-                  <div className="d-flex flex-column gap-2 mt-auto pt-3">
-
-                    <div className="d-flex gap-2">
-                      <Button
-                        size="sm"
-                        style={{
-                          backgroundColor: '#fff',
-                          color: '#111',
-                          border: 'none',
-                          flex: 1,
-                          fontWeight: 'bold',
-                          borderRadius: '6px'
-                        }}
-                        onClick={() => navigate(`/editar/${habito._id}`)}
-                      >
-                        Editar
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        disabled={habito.statusHoje === 'Concluído'}
-                        style={{
-                          backgroundColor: habito.statusHoje === 'Concluído' ? '#555' : '#e60000',
-                          color: '#fff',
-                          border: 'none',
-                          flex: 1,
-                          fontWeight: 'bold',
-                          borderRadius: '6px',
-                          cursor: habito.statusHoje === 'Concluído' ? 'not-allowed' : 'pointer'
-                        }}
-                        onClick={() => concluirHabito(habito._id)}
-                      >
-                        Concluir
-                      </Button>
-                    </div>
-
-                    <Button
-                      size="sm"
-                      style={{
-                        backgroundColor: '#333',
-                        color: '#fff',
-                        border: 'none',
-                        fontWeight: 'bold',
-                        borderRadius: '6px'
-                      }}
-                      onClick={() => excluirHabito(habito._id)}
-                    >
-                      Excluir
-                    </Button>
-
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {habitos
+            .filter(h => (h.tipo || 'Construtivo') === tabAtiva)
+            .map((habito) => {
+            const concluido = habito.statusHoje === 'Concluído';
+            const isDestr = tabAtiva === 'Destrutivo';
+            const accentColor = isDestr ? '#ff6600' : '#e60000';
+            const doneColor = isDestr ? '#4caf50' : '#4caf50';
+            return (
+              <div
+                key={habito._id}
+                style={{
+                  backgroundColor: '#1a1a1a',
+                  border: '1px solid #2a2a2a',
+                  borderRadius: '10px',
+                  padding: '16px',
+                  borderLeft: `3px solid ${concluido ? doneColor : accentColor}`,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <div>
+                    <h3 style={{ color: '#fff', fontSize: '1.05rem', fontWeight: 'bold', margin: '0 0 4px 0' }}>
+                      {habito.nome}
+                    </h3>
+                    {habito.descricao && (
+                      <p style={{ color: '#777', fontSize: '0.85rem', margin: '0 0 6px 0' }}>{habito.descricao}</p>
+                    )}
                   </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          )) : (
-            <p className="text-center text-muted">Nenhum hábito encontrado.</p>
+                  <StreakFlame streak={habito.streakAtual} />
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                  <span style={{
+                    backgroundColor: '#222',
+                    color: '#999',
+                    fontSize: '0.75rem',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                  }}>
+                    {habito.frequencia}
+                  </span>
+                  <span style={{
+                    backgroundColor: concluido ? '#1a2e1a' : (isDestr ? '#1a1000' : '#2a1a1a'),
+                    color: concluido ? '#4caf50' : accentColor,
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                  }}>
+                    {concluido
+                      ? (isDestr ? 'Resisti' : 'Concluído')
+                      : (isDestr ? 'Pendente' : 'Pendente')
+                    }
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => navigate(`/editar/${habito._id}`)}
+                    style={{
+                      flex: 1,
+                      backgroundColor: '#222',
+                      color: '#ccc',
+                      border: '1px solid #333',
+                      borderRadius: '6px',
+                      padding: '8px',
+                      fontWeight: 'bold',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    disabled={concluido}
+                    onClick={() => concluirHabito(habito._id)}
+                    style={{
+                      flex: 1,
+                      backgroundColor: concluido ? '#333' : accentColor,
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '8px',
+                      fontWeight: 'bold',
+                      fontSize: '0.85rem',
+                      cursor: concluido ? 'not-allowed' : 'pointer',
+                      opacity: concluido ? 0.5 : 1,
+                    }}
+                  >
+                    {concluido
+                      ? (isDestr ? 'Resisti' : 'Feito')
+                      : (isDestr ? 'Evitei' : 'Concluir')
+                    }
+                  </button>
+                  <button
+                    onClick={() => excluirHabito(habito._id)}
+                    style={{
+                      backgroundColor: '#1a1a1a',
+                      color: '#666',
+                      border: '1px solid #333',
+                      borderRadius: '6px',
+                      padding: '8px 12px',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {!loading && habitos.filter(h => (h.tipo || 'Construtivo') === tabAtiva).length === 0 && (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#555' }}>
+              <p style={{ fontSize: '0.95rem' }}>
+                {tabAtiva === 'Destrutivo'
+                  ? 'Nenhum hábito destrutivo rastreado.'
+                  : 'Nenhum hábito construtivo ainda.'}
+              </p>
+              <p style={{ fontSize: '0.85rem', color: '#444' }}>Crie um novo hábito abaixo.</p>
+            </div>
           )}
-        </Row>
+        </div>
+      </div>
 
-        <Link
-          to="/criar"
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            width: '60px',
-            height: '60px',
-            backgroundColor: '#1a1a1a',
-            border: '2px solid #dc3545',
-            borderRadius: '12px',
-            boxShadow: '0 0 15px rgba(255, 0, 0, 0.6)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1.5rem'
-          }}
-        >
-          🔥
-        </Link>
-
-      </Container>
-    </>
+      {/* FAB */}
+      <Link
+        to="/criar"
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          width: '56px',
+          height: '56px',
+          backgroundColor: '#e60000',
+          borderRadius: '14px',
+          boxShadow: '0 4px 20px rgba(230, 0, 0, 0.4)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '1.5rem',
+          textDecoration: 'none',
+          color: '#fff',
+          fontWeight: 'bold',
+        }}
+      >
+        +
+      </Link>
+    </div>
   );
 }
 

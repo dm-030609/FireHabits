@@ -5,11 +5,58 @@ const Registro = require('../models/registro');
 
 
 
-// Rota para listar os hábitos
+// Calcula streak de dias consecutivos para um hábito
+async function calcularStreak(habitoId) {
+  const registros = await Registro.find({
+    habitoId,
+    valor: true,
+  }).sort({ data: -1 });
+
+  if (registros.length === 0) return 0;
+
+  const hoje = new Date();
+  hoje.setUTCHours(0, 0, 0, 0);
+
+  const ontem = new Date(hoje);
+  ontem.setUTCDate(ontem.getUTCDate() - 1);
+
+  const primeiraData = new Date(registros[0].data);
+  primeiraData.setUTCHours(0, 0, 0, 0);
+
+  // Streak só conta se o último registro é hoje ou ontem
+  if (primeiraData.getTime() !== hoje.getTime() && primeiraData.getTime() !== ontem.getTime()) {
+    return 0;
+  }
+
+  let streak = 1;
+  for (let i = 1; i < registros.length; i++) {
+    const atual = new Date(registros[i - 1].data);
+    atual.setUTCHours(0, 0, 0, 0);
+    const anterior = new Date(registros[i].data);
+    anterior.setUTCHours(0, 0, 0, 0);
+
+    const diffDias = (atual.getTime() - anterior.getTime()) / (1000 * 60 * 60 * 24);
+    if (diffDias === 1) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+}
+
+// Rota para listar os hábitos (com streak)
 router.get('/', async (req, res) => {
   try {
     const habitos = await Habito.find();
-    res.json(habitos);
+    const habitosComStreak = await Promise.all(
+      habitos.map(async (h) => {
+        const streakAtual = await calcularStreak(h._id);
+        return { ...h.toObject(), streakAtual };
+      })
+    );
+    res.json(habitosComStreak);
   } catch (err) {
     res.status(500).json({ mensagem: 'Erro ao buscar hábitos', erro: err });
   }
@@ -36,10 +83,11 @@ router.post("/", async (req, res) => {
 
     // garante que o _id seja usado
     const novoHabito = new Habito({
-      _id: dados._id, 
+      _id: dados._id,
       nome: dados.nome,
       descricao: dados.descricao,
       frequencia: dados.frequencia,
+      tipo: dados.tipo,
       status: dados.status,
       criadoEm: dados.criadoEm
     });
@@ -56,24 +104,24 @@ router.post("/", async (req, res) => {
 //  atualizar hábito
 router.put("/:id", async (req, res) => {
   console.log('🚀 Dados recebidos no PUT:', req.body);
-    try {
-        const atualizado = await Habito.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if(!atualizado) return res.status(404).json({ erro: "Hábito não encontrado", detalhes: err});
-        
-        // Se marcado como concluído, salva um registro
-        if (req.body.status === 'Concluído') {
-          const novoRegistro = new Registro({
-            habitoId: req.params.id,
-            data: new Date(),
-            valor: true, // ou concluido
-          });
-          await novoRegistro.save();
-        }
+  try {
+    const atualizado = await Habito.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!atualizado) return res.status(404).json({ erro: "Hábito não encontrado", detalhes: err });
 
-        res.json(atualizado);
-    } catch (err) {
-        res.status(400).json({ erro: "Erro ao atualizar hábito", detalhes: err});
+    // Se marcado como concluído, salva um registro
+    if (req.body.status === 'Concluído') {
+      const novoRegistro = new Registro({
+        habitoId: req.params.id,
+        data: new Date(),
+        valor: true, // ou concluido
+      });
+      await novoRegistro.save();
     }
+
+    res.json(atualizado);
+  } catch (err) {
+    res.status(400).json({ erro: "Erro ao atualizar hábito", detalhes: err });
+  }
 });
 
 //  Deletar hábito
@@ -91,7 +139,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/resumo', async (req, res) => {
   try {
     const habitos = await Habito.find();
-    
+
     const ativos = habitos.length;
     const concluidosHoje = habitos.filter(h => h.status === 'Concluído' && h.updatedAt && new Date(h.updatedAt).toDateString() === new Date().toDateString()).length;
     const pendentes = habitos.filter(h => h.status === 'Pendente').length;

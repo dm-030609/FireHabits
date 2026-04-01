@@ -49,6 +49,29 @@ router.get('/', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /registro/heatmap?meses=12  -> contagem de conclusões por dia
+router.get('/heatmap', async (req, res, next) => {
+  try {
+    const meses = parseInt(req.query.meses) || 12;
+    const ini = new Date();
+    ini.setUTCMonth(ini.getUTCMonth() - meses);
+    ini.setUTCHours(0, 0, 0, 0);
+
+    const resultado = await Registro.aggregate([
+      { $match: { valor: true, data: { $gte: ini } } },
+      { $group: { _id: '$data', count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ]);
+
+    const heatmap = resultado.map((r) => ({
+      data: r._id.toISOString().split('T')[0],
+      count: r.count,
+    }));
+
+    res.json(heatmap);
+  } catch (err) { next(err); }
+});
+
 // GET /registro/:id
 router.get('/:id', async (req, res, next) => {
   try {

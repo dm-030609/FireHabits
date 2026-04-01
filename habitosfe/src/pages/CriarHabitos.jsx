@@ -4,9 +4,25 @@ import axios from "axios";
 import { salvarLembrete } from "../utils/lembrete-db.js";
 import { salvarHabitoLocal } from "../utils/indexedDB.js";
 import { salvarAcaoPendente } from "../utils/syncDB.js";
-console.log("✅ salvarAcaoPendente carregado:", salvarAcaoPendente);
 
 const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+const inputStyle = {
+  backgroundColor: '#111',
+  color: '#ccc',
+  border: '1px solid #333',
+  borderRadius: '8px',
+  fontSize: '1rem',
+  padding: '10px 12px',
+};
+
+const labelStyle = {
+  fontWeight: 'bold',
+  color: '#ccc',
+  fontSize: '0.9rem',
+  marginBottom: '6px',
+  letterSpacing: '0.3px',
+};
 
 function CriarHabito() {
   const navigate = useNavigate();
@@ -14,6 +30,7 @@ function CriarHabito() {
     nome: "",
     descricao: "",
     frequencia: "",
+    tipo: "Construtivo",
     status: "Ativo",
   });
 
@@ -41,84 +58,221 @@ function CriarHabito() {
 
     try {
       if (navigator.onLine) {
-        console.log("🟢 ONLINE - salvando no backend...");
-        const res = await axios.post("https://firehabits.onrender.com/habitos", habito);
+        const res = await axios.post("/habitos", habito);
         if (res.data && res.data._id) {
           novoHabito = res.data;
         } else {
           throw new Error("Resposta do backend não contém _id");
         }
       } else {
-        console.log("🔴 OFFLINE - salvando localmente...");
         await salvarHabitoLocal(novoHabito);
-
         await salvarAcaoPendente({
           type: 'criar',
           dados: novoHabito,
           timestamp: Date.now()
         });
-
-        alert("📴 Hábito salvo offline e marcado para sincronização!");
       }
 
       if (novoHabito._id && horario && mensagem && dias.length > 0) {
         await salvarLembrete(novoHabito._id, { horario, mensagem, dias });
       }
 
-      console.log("✅ Tudo salvo. Redirecionando...");
       navigate("/habitos");
     } catch (err) {
-      console.error("🔥 ERRO em handleSubmit:", err);
-      alert("Erro ao salvar hábito. Veja o console.");
+      console.error("Erro ao salvar hábito:", err);
+      alert("Erro ao salvar hábito.");
     }
   };
 
   return (
-    <div className="container py-5">
-      <button onClick={() => navigate("/habitos")} className="btn btn-outline-danger mb-3">
-        🔥 Voltar
-      </button>
-      <h2 className="text-center text-danger mb-4">Novo Hábito</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label className="form-label">Nome</label>
-          <input type="text" className="form-control" name="nome" value={habito.nome} onChange={handleChange} required />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Descrição</label>
-          <textarea className="form-control" name="descricao" value={habito.descricao} onChange={handleChange} />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Frequência</label>
-          <input type="text" className="form-control" name="frequencia" value={habito.frequencia} onChange={handleChange} required />
-        </div>
-        <div className="mb-4">
-          <label className="form-label">Status</label>
-          <select name="status" className="form-select" value={habito.status} onChange={handleChange} required>
-            <option>Ativo</option>
-            <option>Concluído</option>
-            <option>Inativo</option>
-          </select>
-        </div>
-        <h5 className="text-danger">🔔 Lembrete (opcional)</h5>
-        <div className="row g-2 align-items-center mb-2">
-          <div className="col-4">
-            <input type="time" className="form-control" value={horario} onChange={(e) => setHorario(e.target.value)} />
+    <div style={{ backgroundColor: '#111', minHeight: '100vh', padding: '16px' }}>
+      <div style={{ maxWidth: '520px', margin: '0 auto' }}>
+
+        <button
+          onClick={() => navigate("/habitos")}
+          style={{
+            background: 'none',
+            border: '1px solid #e60000',
+            color: '#e60000',
+            fontWeight: 'bold',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            marginBottom: '16px',
+            fontSize: '0.9rem',
+          }}
+        >
+          Voltar
+        </button>
+
+        <h2 style={{ color: '#e60000', textAlign: 'center', marginBottom: '24px', fontSize: '1.5rem', fontWeight: 'bold' }}>
+          Novo Hábito
+        </h2>
+
+        <form onSubmit={handleSubmit}>
+          {/* Tipo: Construtivo / Destrutivo */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={labelStyle}>Tipo de Hábito</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {['Construtivo', 'Destrutivo'].map((t) => {
+                const ativo = habito.tipo === t;
+                const isDestr = t === 'Destrutivo';
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setHabito(prev => ({ ...prev, tipo: t }))}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      borderRadius: '8px',
+                      fontWeight: 'bold',
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                      border: ativo
+                        ? `2px solid ${isDestr ? '#ff6600' : '#4caf50'}`
+                        : '1px solid #333',
+                      backgroundColor: ativo
+                        ? (isDestr ? '#1a1000' : '#0a1a0a')
+                        : '#1a1a1a',
+                      color: ativo
+                        ? (isDestr ? '#ff6600' : '#4caf50')
+                        : '#666',
+                    }}
+                  >
+                    {isDestr ? 'Destrutivo (Evitar)' : 'Construtivo (Criar)'}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div className="col">
-            <input type="text" className="form-control" placeholder="Mensagem" value={mensagem} onChange={(e) => setMensagem(e.target.value)} />
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={labelStyle}>Nome</label>
+            <input
+              type="text"
+              name="nome"
+              value={habito.nome}
+              onChange={handleChange}
+              required
+              placeholder="Ex: Meditar 10 minutos"
+              style={{ ...inputStyle, width: '100%' }}
+            />
           </div>
-        </div>
-        <div className="mb-4">
-          {diasSemana.map((dia, idx) => (
-            <label key={idx} className="form-check form-check-inline">
-              <input type="checkbox" className="form-check-input" checked={dias.includes(idx)} onChange={() => toggleDia(idx)} />
-              <span className="form-check-label">{dia}</span>
-            </label>
-          ))}
-        </div>
-        <button className="btn btn-danger w-100">Criar Hábito</button>
-      </form>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={labelStyle}>Descrição</label>
+            <textarea
+              name="descricao"
+              value={habito.descricao}
+              onChange={handleChange}
+              rows={3}
+              placeholder="Detalhes sobre o hábito..."
+              style={{ ...inputStyle, width: '100%', resize: 'vertical' }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={labelStyle}>Frequência</label>
+            <select
+              name="frequencia"
+              value={habito.frequencia}
+              onChange={handleChange}
+              required
+              style={{ ...inputStyle, width: '100%' }}
+            >
+              <option value="">Selecione...</option>
+              <option value="Diariamente">Diariamente</option>
+              <option value="Dias Úteis">Dias Úteis</option>
+              <option value="Finais de Semana">Finais de Semana</option>
+              <option value="Semanal">Semanal</option>
+              <option value="Livre">Livre</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label style={labelStyle}>Status</label>
+            <select
+              name="status"
+              value={habito.status}
+              onChange={handleChange}
+              required
+              style={{ ...inputStyle, width: '100%' }}
+            >
+              <option value="Ativo">Ativo</option>
+              <option value="Concluído">Concluído</option>
+              <option value="Inativo">Inativo</option>
+            </select>
+          </div>
+
+          {/* Lembrete */}
+          <div style={{
+            borderTop: '1px solid #333',
+            paddingTop: '16px',
+            marginBottom: '20px',
+          }}>
+            <h5 style={{ color: '#e60000', fontWeight: 'bold', fontSize: '1rem', marginBottom: '12px' }}>
+              Lembrete (opcional)
+            </h5>
+
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <input
+                type="time"
+                value={horario}
+                onChange={(e) => setHorario(e.target.value)}
+                style={{ ...inputStyle, flex: '0 0 120px' }}
+              />
+              <input
+                type="text"
+                placeholder="Mensagem"
+                value={mensagem}
+                onChange={(e) => setMensagem(e.target.value)}
+                style={{ ...inputStyle, flex: 1 }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {diasSemana.map((dia, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => toggleDia(idx)}
+                  style={{
+                    backgroundColor: dias.includes(idx) ? '#e60000' : '#1a1a1a',
+                    color: '#fff',
+                    border: dias.includes(idx) ? '1px solid #e60000' : '1px solid #444',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    minWidth: '42px',
+                    textAlign: 'center',
+                  }}
+                >
+                  {dia}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            style={{
+              width: '100%',
+              backgroundColor: '#e60000',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '12px',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+            }}
+          >
+            Criar Hábito
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
