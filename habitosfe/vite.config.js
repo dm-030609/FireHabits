@@ -31,8 +31,8 @@ export default defineConfig({
         enabled: true
       },
       workbox: {
-        navigateFallback: '/',
-        navigateFallbackAllowlist: [/^\/$/, /^\/habitos$/, /^\/dashboard$/, /^\/criar$/, /^\/editarHabito\/.+$/]
+        navigateFallback: '/index.html',
+        navigateFallbackAllowlist: [/^\//]
       }
     })
   ],
