@@ -28,8 +28,9 @@ function Tarefas() {
     try {
       if (navigator.onLine) {
         const res = await axios.get('/tarefas');
-        await salvarMultiplasTarefas(res.data);
-        setTarefas(res.data);
+        const tarefasData = Array.isArray(res.data) ? res.data : [];
+        await salvarMultiplasTarefas(tarefasData);
+        setTarefas(tarefasData);
       } else {
         const locais = await listarTarefasLocal();
         setTarefas(locais);

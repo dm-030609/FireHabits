@@ -38,7 +38,7 @@ function Calendario() {
     try {
       if (navigator.onLine) {
         const res = await axios.get('/blocos');
-        setBlocos(res.data);
+        setBlocos(Array.isArray(res.data) ? res.data : []);
       }
     } catch { /* silent */ }
     finally { setLoading(false); }

@@ -39,7 +39,7 @@ function Habitos() {
   const fetchHabitos = useCallback(async () => {
     try {
       const res = await axios.get('/habitos');
-      let lista = res.data;
+      let lista = Array.isArray(res.data) ? res.data : [];
       await salvarMultiplosHabitos(lista);
       lista = await aplicarStatusDiario(lista);
       setHabitos(lista);
