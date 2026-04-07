@@ -15,11 +15,18 @@ router.get('/', async (req, res, next) => {
 // POST /blocos — criar bloco
 router.post('/', async (req, res, next) => {
   try {
-    const { titulo, diaSemana, horaInicio, horaFim, categoria, cor, usuarioId } = req.body;
-    if (!titulo || diaSemana === undefined || !horaInicio || !horaFim) {
-      return res.status(400).json({ erro: 'titulo, diaSemana, horaInicio e horaFim sao obrigatorios' });
+    const { titulo, diaSemana, dataEspecifica, horaInicio, horaFim, categoria, cor, usuarioId } = req.body;
+    if (!titulo || (!horaInicio) || (!horaFim)) {
+      return res.status(400).json({ erro: 'titulo, horaInicio e horaFim sao obrigatorios' });
     }
-    const bloco = await Bloco.create({ titulo, diaSemana, horaInicio, horaFim, categoria, cor, usuarioId });
+    if (diaSemana === undefined && !dataEspecifica) {
+      return res.status(400).json({ erro: 'Informe diaSemana (recorrente) ou dataEspecifica (avulso)' });
+    }
+    const bloco = await Bloco.create({
+      titulo, horaInicio, horaFim, categoria, cor, usuarioId,
+      diaSemana: dataEspecifica ? null : diaSemana,
+      dataEspecifica: dataEspecifica || null,
+    });
     res.status(201).json(bloco);
   } catch (err) { next(err); }
 });
