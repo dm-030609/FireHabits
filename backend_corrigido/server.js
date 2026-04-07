@@ -19,17 +19,29 @@ app.use(helmet({
 app.use(compression());
 
 // CORS restrito por variável de ambiente (pode ser lista separada por vírgula)
+// Suporta wildcards como *.vercel.app
 const allowed = (process.env.CORS_ORIGIN || '*')
   .split(',')
   .map(s => s.trim())
   .filter(Boolean);
 
+function isOriginAllowed(origin) {
+  return allowed.some(pattern => {
+    if (pattern === '*') return true;
+    if (pattern.startsWith('*.')) {
+      const suffix = pattern.slice(1); // ex: .vercel.app
+      return origin.endsWith(suffix);
+    }
+    return pattern === origin;
+  });
+}
+
 app.use(cors({
   origin(origin, cb) {
     // Permite ferramentas sem origin (ex: mobile, Postman, DevTools)
-    if (!origin || allowed.includes('*')) return cb(null, true);
+    if (!origin) return cb(null, true);
 
-    if (allowed.includes(origin)) {
+    if (isOriginAllowed(origin)) {
       return cb(null, true);
     } else {
       return cb(new Error("CORS bloqueado: origem não permitida → " + origin), false);

@@ -1,6 +1,10 @@
 import axios from 'axios';
 import { initDB, salvarHabitoLocal, removerHabitoLocal } from './indexedDB';
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+let baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+if (baseUrl && !baseUrl.startsWith('http')) {
+  baseUrl = `https://${baseUrl}`;
+}
+axios.defaults.baseURL = baseUrl;
 
 const ACAO_STORE = 'pendentes';
 

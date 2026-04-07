@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import {
   initDB,
@@ -16,6 +16,7 @@ import { salvarAcaoPendente } from '../utils/syncDB.js';
 import StreakFlame from '../components/StreakFlame.jsx';
 import Heatmap from '../components/Heatmap.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import FAB from '../components/FAB.jsx';
 
 function Habitos() {
   const [habitos, setHabitos] = useState([]);
@@ -288,30 +289,7 @@ function Habitos() {
         </div>
       </div>
 
-      {/* FAB */}
-      <Link
-        to="/criar"
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          width: '56px',
-          height: '56px',
-          backgroundColor: '#e60000',
-          borderRadius: '14px',
-          boxShadow: '0 4px 20px rgba(230, 0, 0, 0.4)',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '1.5rem',
-          textDecoration: 'none',
-          color: '#fff',
-          fontWeight: 'bold',
-        }}
-      >
-        +
-      </Link>
+      <FAB to="/criar" />
     </div>
   );
 }
