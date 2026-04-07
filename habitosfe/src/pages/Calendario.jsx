@@ -72,9 +72,13 @@ function blocoPos(bloco) {
  * - Recorrente: diaSemana bate com o dia-da-semana de `date`
  */
 function blocosParaData(blocos, date) {
+  const dateStr = formatDate(date); // "YYYY-MM-DD" local
   return blocos.filter(b => {
     if (b.dataEspecifica) {
-      return isSameDay(new Date(b.dataEspecifica), date);
+      // Compara como string UTC para evitar offset de fuso horário
+      // Ex: "2026-04-08T00:00:00.000Z".slice(0,10) === "2026-04-08"
+      const storedStr = new Date(b.dataEspecifica).toISOString().slice(0, 10);
+      return storedStr === dateStr;
     }
     return b.diaSemana === date.getDay();
   }).sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
