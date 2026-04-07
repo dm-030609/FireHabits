@@ -6,6 +6,41 @@ if (baseUrl && !baseUrl.startsWith('http')) {
 }
 axios.defaults.baseURL = baseUrl;
 
+// Interceptor: injeta token JWT em cada requisição
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('fh_token');
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Interceptor: logout automático em caso de 401
+axios.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error?.response?.status === 401) {
+      // Limpa sessão sem depender do contexto React
+      localStorage.removeItem('fh_token');
+      localStorage.removeItem('fh_usuario');
+      delete axios.defaults.headers.common['Authorization'];
+      // Limpa IndexedDB
+      try {
+        const db = await initDB();
+        const stores = ['habitos', 'pendentes', 'lembretes', 'conclusoes', 'progressoSemana', 'diario', 'tarefas'];
+        for (const store of stores) {
+          await db.clear(store).catch(() => {});
+        }
+      } catch (_) {}
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 const ACAO_STORE = 'pendentes';
 
 export async function listarAcoesPendentes() {

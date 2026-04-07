@@ -58,6 +58,7 @@ const Registro = require('./models/registro.js');
 const Categoria= require('./models/categoria.js');
 
 // Rotas
+const authRouter     = require('./routes/auth.js');
 const progressoRouter = require('./routes/progresso.js');
 const habitosRoutes   = require('./routes/habitos.js');
 const registroRouter = require('./routes/registro.js');
@@ -65,6 +66,7 @@ const diarioRouter   = require('./routes/diario.js');
 const tarefasRouter  = require('./routes/tarefas.js');
 const blocosRouter   = require('./routes/blocos.js');
 
+app.use('/auth',      authRouter);
 app.use('/progresso', progressoRouter);
 app.use('/habitos',   habitosRoutes);
 app.use('/registro', registroRouter);

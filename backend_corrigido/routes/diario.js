@@ -1,11 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const Diario = require('../models/diario');
+const auth = require('../middlewares/auth');
 
-// Listar entradas (com filtro opcional por data)
+router.use(auth);
+
+// GET /diario
 router.get('/', async (req, res) => {
   try {
-    const filtro = {};
+    const filtro = { usuarioId: req.usuarioId };
     if (req.query.data) {
       const d = new Date(req.query.data);
       d.setUTCHours(0, 0, 0, 0);
@@ -18,16 +21,16 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Criar ou atualizar entrada do dia (upsert)
+// POST /diario (upsert por data+usuário)
 router.post('/', async (req, res) => {
   try {
-    const { data, conteudo, usuarioId } = req.body;
+    const { data, conteudo } = req.body;
     const d = new Date(data);
     d.setUTCHours(0, 0, 0, 0);
 
     const entrada = await Diario.findOneAndUpdate(
-      { data: d },
-      { conteudo, usuarioId },
+      { data: d, usuarioId: req.usuarioId },
+      { conteudo, usuarioId: req.usuarioId },
       { upsert: true, new: true, runValidators: true }
     );
     res.status(201).json(entrada);
@@ -36,13 +39,14 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Atualizar entrada por ID
+// PUT /diario/:id
 router.put('/:id', async (req, res) => {
   try {
-    const atualizado = await Diario.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const atualizado = await Diario.findOneAndUpdate(
+      { _id: req.params.id, usuarioId: req.usuarioId },
+      req.body,
+      { new: true, runValidators: true }
+    );
     if (!atualizado) return res.status(404).json({ erro: 'Entrada não encontrada' });
     res.json(atualizado);
   } catch (err) {

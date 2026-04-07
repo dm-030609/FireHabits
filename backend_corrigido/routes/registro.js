@@ -1,27 +1,28 @@
-// backend_corrigido/routes/registro.js
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Registro = require('../models/registro.js');
+const auth = require('../middlewares/auth');
 
-// Helpers (opcional, caso queira normalizar aqui também)
+router.use(auth);
+
 const toUTCDateOnly = (d) => {
   const x = new Date(d || Date.now());
   return new Date(Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate()));
 };
 
-// POST /registro  -> upsert idempotente por (habitoId, data)
+// POST /registro — upsert idempotente por (habitoId, data, usuarioId)
 router.post('/', async (req, res, next) => {
   try {
-    const { habitoId, usuarioId, valor = true, nota, comentario } = req.body || {};
+    const { habitoId, valor = true, nota, comentario } = req.body || {};
     let { data } = req.body || {};
     if (!habitoId) return res.status(400).json({ erro: 'habitoId é obrigatório' });
 
     data = toUTCDateOnly(data);
 
     const doc = await Registro.findOneAndUpdate(
-      { habitoId, data },
-      { $set: { habitoId, data, usuarioId, valor, nota, comentario } },
+      { habitoId, data, usuarioId: req.usuarioId },
+      { $set: { habitoId, data, usuarioId: req.usuarioId, valor, nota, comentario } },
       { new: true, upsert: true, setDefaultsOnInsert: true }
     ).lean();
 
@@ -32,12 +33,11 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// GET /registro?habitoId=&usuarioId=&ini=YYYY-MM-DD&fim=YYYY-MM-DD
+// GET /registro
 router.get('/', async (req, res, next) => {
   try {
-    const q = {};
+    const q = { usuarioId: req.usuarioId };
     if (req.query.habitoId) q.habitoId = req.query.habitoId;
-    if (req.query.usuarioId) q.usuarioId = req.query.usuarioId;
 
     if (req.query.ini || req.query.fim) {
       q.data = {};
@@ -50,7 +50,7 @@ router.get('/', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /registro/heatmap?meses=12&habitoId=xxx  -> contagem de conclusões por dia
+// GET /registro/heatmap
 router.get('/heatmap', async (req, res, next) => {
   try {
     const meses = parseInt(req.query.meses) || 12;
@@ -58,7 +58,11 @@ router.get('/heatmap', async (req, res, next) => {
     ini.setUTCMonth(ini.getUTCMonth() - meses);
     ini.setUTCHours(0, 0, 0, 0);
 
-    const matchStage = { valor: true, data: { $gte: ini } };
+    const matchStage = {
+      valor: true,
+      data: { $gte: ini },
+      usuarioId: new mongoose.Types.ObjectId(req.usuarioId),
+    };
     if (req.query.habitoId) {
       matchStage.habitoId = mongoose.Types.ObjectId.createFromHexString(req.query.habitoId);
     }
@@ -81,7 +85,7 @@ router.get('/heatmap', async (req, res, next) => {
 // GET /registro/:id
 router.get('/:id', async (req, res, next) => {
   try {
-    const doc = await Registro.findById(req.params.id).lean();
+    const doc = await Registro.findOne({ _id: req.params.id, usuarioId: req.usuarioId }).lean();
     if (!doc) return res.status(404).json({ erro: 'Registro não encontrado' });
     res.json(doc);
   } catch (err) { next(err); }
@@ -93,8 +97,8 @@ router.put('/:id', async (req, res, next) => {
     const update = { ...req.body };
     if (update.data) update.data = toUTCDateOnly(update.data);
 
-    const doc = await Registro.findByIdAndUpdate(
-      req.params.id,
+    const doc = await Registro.findOneAndUpdate(
+      { _id: req.params.id, usuarioId: req.usuarioId },
       update,
       { new: true, runValidators: true }
     ).lean();
@@ -104,7 +108,7 @@ router.put('/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// DELETE /registro/by-day  { habitoId, data: 'YYYY-MM-DD' }
+// DELETE /registro/by-day
 router.delete('/by-day', async (req, res, next) => {
   try {
     const { habitoId, data } = req.body || {};
@@ -112,30 +116,25 @@ router.delete('/by-day', async (req, res, next) => {
       return res.status(400).json({ erro: 'habitoId e data são obrigatórios' });
     }
 
-    // início e fim do dia em UTC
     const d = new Date(data);
     const start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
     const end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1));
 
     const r = await Registro.findOneAndDelete({
       habitoId,
+      usuarioId: req.usuarioId,
       data: { $gte: start, $lt: end }
     });
 
-    if (!r) {
-      return res.status(404).json({ erro: 'Registro do dia não encontrado' });
-    }
-
+    if (!r) return res.status(404).json({ erro: 'Registro do dia não encontrado' });
     return res.sendStatus(204);
-  } catch (err) {
-    return next(err);
-  }
+  } catch (err) { return next(err); }
 });
 
-// DEPOIS disso vem o DELETE /:id
+// DELETE /registro/:id
 router.delete('/:id', async (req, res, next) => {
   try {
-    const r = await Registro.findByIdAndDelete(req.params.id);
+    const r = await Registro.findOneAndDelete({ _id: req.params.id, usuarioId: req.usuarioId });
     if (!r) return res.status(404).json({ erro: 'Registro não encontrado' });
     res.sendStatus(204);
   } catch (err) { next(err); }
