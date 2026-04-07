@@ -19,7 +19,7 @@ const END_HOUR   = 23;
 const START_MIN  = START_HOUR * 60;
 const END_MIN    = END_HOUR * 60;
 const TOTAL_MIN  = END_MIN - START_MIN; // 1080
-const PX_PER_MIN = 1;
+const PX_PER_MIN = 1.2; // 60 min = 72px, total timeline = 1296px
 
 const HOUR_LABELS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
@@ -60,10 +60,11 @@ function catCor(cat) {
   return CATEGORIAS.find(c => c.key === cat)?.cor || '#555';
 }
 function blocoPos(bloco) {
-  const cor    = bloco.cor || catCor(bloco.categoria);
-  const top    = (h2m(bloco.horaInicio) - START_MIN) * PX_PER_MIN;
-  const height = Math.max(20, (h2m(bloco.horaFim) - h2m(bloco.horaInicio)) * PX_PER_MIN);
-  return { top, height, cor };
+  const cor         = bloco.cor || catCor(bloco.categoria);
+  const durationMin = h2m(bloco.horaFim) - h2m(bloco.horaInicio);
+  const top         = (h2m(bloco.horaInicio) - START_MIN) * PX_PER_MIN;
+  const height      = Math.max(22, durationMin * PX_PER_MIN);
+  return { top, height, cor, durationMin };
 }
 
 /**
@@ -273,23 +274,27 @@ function WeekView({ currentDate, blocos, nowPx, onTimeClick, onBlocoClick }) {
                   </div>
                 )}
                 {dayBlocos.map(bloco => {
-                  const { top, height, cor } = blocoPos(bloco);
-                  // Badge for one-off blocks
+                  const { top, height, cor, durationMin } = blocoPos(bloco);
                   const isAvulso = !!bloco.dataEspecifica;
+                  const isShort  = durationMin < 45;
                   return (
                     <div key={bloco._id} onClick={(e) => { e.stopPropagation(); onBlocoClick(bloco); }} style={{
                       position: 'absolute', top: `${top}px`, height: `${height}px`,
                       left: '2px', right: '2px', borderRadius: '4px',
-                      backgroundColor: cor + '22',
-                      borderLeft: `3px solid ${cor}`,
+                      backgroundColor: cor + '22', borderLeft: `3px solid ${cor}`,
                       padding: '2px 4px', overflow: 'hidden', cursor: 'pointer', zIndex: 2,
+                      display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                      boxSizing: 'border-box',
                     }}>
-                      <div style={{ color: '#fff', fontSize: '0.62rem', fontWeight: 'bold', lineHeight: 1.3 }}>
-                        {bloco.titulo}
-                      </div>
-                      <div style={{ color: '#777', fontSize: '0.55rem' }}>{bloco.horaInicio}</div>
+                      <div style={{
+                        color: '#fff', fontSize: '0.62rem', fontWeight: 'bold',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>{bloco.titulo}</div>
+                      {!isShort && (
+                        <div style={{ color: '#777', fontSize: '0.55rem', whiteSpace: 'nowrap' }}>{bloco.horaInicio}</div>
+                      )}
                       {isAvulso && (
-                        <div style={{ position: 'absolute', top: '2px', right: '2px', width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#ff9800' }} title="Avulso" />
+                        <div style={{ position: 'absolute', top: '2px', right: '2px', width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#ff9800' }} />
                       )}
                     </div>
                   );
@@ -358,29 +363,55 @@ function DayView({ currentDate, blocos, nowPx, onTimeClick, onBlocoClick }) {
           )}
 
           {dayBlocos.map(bloco => {
-            const { top, height, cor } = blocoPos(bloco);
-            const isAvulso = !!bloco.dataEspecifica;
+            const { top, height, cor, durationMin } = blocoPos(bloco);
+            const isAvulso  = !!bloco.dataEspecifica;
+            const isShort   = durationMin < 45;   // < 45 min: compacto
+            const isMedium  = durationMin < 60;   // 45-59 min: sem tag separada
+            const padding   = isShort ? '3px 8px' : '6px 10px';
+
+            const tagEl = (
+              <span style={{
+                flexShrink: 0,
+                backgroundColor: cor + '28', color: cor,
+                fontSize: '0.58rem', fontWeight: 'bold',
+                padding: '1px 6px', borderRadius: '3px',
+                whiteSpace: 'nowrap',
+              }}>{bloco.categoria}</span>
+            );
+
             return (
               <div key={bloco._id} onClick={(e) => { e.stopPropagation(); onBlocoClick(bloco); }} style={{
                 position: 'absolute', top: `${top}px`, height: `${height}px`,
                 left: '4px', right: '10px', borderRadius: '6px',
-                backgroundColor: cor + '1a',
-                borderLeft: `4px solid ${cor}`,
-                padding: '6px 10px', overflow: 'hidden', cursor: 'pointer', zIndex: 2,
+                backgroundColor: cor + '1a', borderLeft: `4px solid ${cor}`,
+                padding, overflow: 'hidden', cursor: 'pointer', zIndex: 2,
+                display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                boxSizing: 'border-box',
               }}>
-                <div style={{ color: '#fff', fontSize: '0.88rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  {bloco.titulo}
+                {/* Linha do título */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0 }}>
+                  <span style={{
+                    color: '#fff', fontSize: isShort ? '0.78rem' : '0.88rem', fontWeight: 'bold',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    flex: 1, minWidth: 0,
+                  }}>{bloco.titulo}</span>
+                  {/* Tag e badge avulso inline quando bloco é curto */}
+                  {isShort && tagEl}
                   {isAvulso && (
-                    <span style={{ fontSize: '0.6rem', color: '#ff9800', fontWeight: 'normal', backgroundColor: '#ff980020', padding: '1px 5px', borderRadius: '3px' }}>avulso</span>
+                    <span style={{ flexShrink: 0, fontSize: '0.55rem', color: '#ff9800', backgroundColor: '#ff980020', padding: '1px 4px', borderRadius: '3px' }}>avulso</span>
                   )}
                 </div>
-                {height >= 40 && (
-                  <div style={{ color: '#666', fontSize: '0.73rem', marginTop: '2px' }}>{bloco.horaInicio} — {bloco.horaFim}</div>
+
+                {/* Horário: só aparece se ≥ 45 min */}
+                {!isShort && (
+                  <div style={{ color: '#666', fontSize: '0.72rem', marginTop: '2px', whiteSpace: 'nowrap' }}>
+                    {bloco.horaInicio} — {bloco.horaFim}
+                  </div>
                 )}
-                {height >= 60 && (
-                  <span style={{ display: 'inline-block', marginTop: '4px', backgroundColor: cor + '28', color: cor, fontSize: '0.6rem', fontWeight: 'bold', padding: '1px 6px', borderRadius: '3px' }}>
-                    {bloco.categoria}
-                  </span>
+
+                {/* Tag separada: só aparece se ≥ 60 min */}
+                {!isMedium && (
+                  <div style={{ marginTop: '4px' }}>{tagEl}</div>
                 )}
               </div>
             );
