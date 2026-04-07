@@ -216,7 +216,7 @@ function PomodoroTimer({ onSessaoCompleta }) {
       {/* Contador de sessoes */}
       <div style={{ color: '#555', fontSize: '0.85rem' }}>
         <span style={{ color: '#e60000', fontWeight: 'bold', fontSize: '1.1rem' }}>{sessoes}</span>
-        {' '}sessao{sessoes !== 1 ? 'es' : ''} hoje
+        {sessoes === 1 ? ' sessão' : ' sessões'} hoje
       </div>
     </div>
   );

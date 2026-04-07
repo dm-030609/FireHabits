@@ -85,7 +85,7 @@ function CriarHabito() {
   };
 
   return (
-    <div style={{ backgroundColor: '#111', minHeight: '100vh', padding: '16px' }}>
+    <div style={{ backgroundColor: '#111', minHeight: '100vh', padding: '16px 16px 80px 16px' }}>
       <div style={{ maxWidth: '520px', margin: '0 auto' }}>
 
         <button

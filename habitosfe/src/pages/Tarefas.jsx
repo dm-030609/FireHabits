@@ -13,7 +13,7 @@ import PageHeader from '../components/PageHeader.jsx';
 
 const prioridadeCores = {
   alta: '#e60000',
-  media: '#ff9800',
+  média: '#ff9800',
   baixa: '#4caf50',
 };
 
@@ -21,7 +21,7 @@ function Tarefas() {
   const [tarefas, setTarefas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [novoTitulo, setNovoTitulo] = useState('');
-  const [novaPrioridade, setNovaPrioridade] = useState('media');
+  const [novaPrioridade, setNovaPrioridade] = useState('média');
   const [tabAtiva, setTabAtiva] = useState('pendente');
 
   const fetchTarefas = useCallback(async () => {
@@ -223,7 +223,7 @@ function Tarefas() {
         }}>
           {[
             { key: 'baixa', label: 'Baixa' },
-            { key: 'media', label: 'Media' },
+            { key: 'média', label: 'Média' },
             { key: 'alta', label: 'Alta' },
           ].map((p) => (
             <button
@@ -369,7 +369,7 @@ function Tarefas() {
 
               {/* Prioridade seletor inline */}
               <div style={{ marginTop: '6px', marginLeft: '36px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {['baixa', 'media', 'alta'].map((p) => (
+                {['baixa', 'média', 'alta'].map((p) => (
                   <button
                     key={p}
                     onClick={() => alterarPrioridade(tarefa._id, p)}
